@@ -1,11 +1,12 @@
-import State from "./State"
+import Scope from "./Scope"
 
 class Module {
 	constructor(path, ext, node) {
 		this.path = path
 		this.ext = ext
 		this.node = node
-		this.state = new State()
+		this.importedModules = []
+		this.scope = new Scope()
 	}
 }
 

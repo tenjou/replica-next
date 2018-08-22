@@ -20,6 +20,7 @@ const fetchMethod = (rootModule, path) => {
 		.then(response => response.text())
 		.then(text => {
 			module = new Module(fullPath, ext, text)
+			module.importedModules.push(rootModule)
 			modulesLoaded[fullPath] = module
 
 			switch(ext) {
