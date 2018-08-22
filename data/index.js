@@ -1,6 +1,6 @@
 import Matrix4 from "./math/Matrix4"
-import basicVS from "./shaders/basic.vs"
-import basicFS from "./shaders/basic.fs"
+import basicVS from "./shaders/sprite.vertex.glsl"
+import basicFS from "./shaders/sprite.fragment.glsl"
 
 let canvas = null
 let gl = null

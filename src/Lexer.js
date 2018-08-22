@@ -7,8 +7,23 @@ const ctx = {
 
 const run = (rootModule, module, node) => {
     ctx.rootModule = rootModule
-    ctx.module = module
-    parseBody(node.body)
+    ctx.module = module    
+    return parseImports(node.body)
+        .then(() => {
+            ctx.rootModule = rootModule
+            ctx.module = module
+            parseBody(node.body)
+        })
+}
+
+const parseImports = (nodes) => {
+    const promises = []
+    for(let n = 0; n < nodes.length; n++) {
+        const node = nodes[n]
+        if(node.type !== "ImportDeclaration") { break }
+        promises.push(parseImportDeclaration(node))
+    }
+    return Promise.all(promises)
 }
 
 const parseBody = (nodes) => {
@@ -19,16 +34,16 @@ const parseBody = (nodes) => {
 }
 
 const parseVariableDeclaration = (node) => {
-
+    console.log(node)
 }
 
 const parseImportDeclaration = (node) => {
-
+    return fetchMethod(ctx.module, node.source.value)
 }
 
 const parse = {
     Body: parseBody,
-    ImportDeclaration: parseImportDeclaration,
+    ImportDeclaration: (node) => {},
     ParseVariableDeclaration: parseVariableDeclaration
 }
 
@@ -36,4 +51,4 @@ const setFetchMethod = (func) => {
     fetchMethod = func
 }
 
-export { run ,setFetchMethod }
+export { run, setFetchMethod }
