@@ -41,11 +41,27 @@ const parseBlockStatement = (node) => {
 
 const parseReturnStatement = (node) => {
     parse[node.argument.type](node.argument)
+    node.primitive = node.argument.primitive
+}
+
+const parseExpressionStatement = (node) => {
+    console.log(node)
+}
+
+const parseIfStatement = (node) => {
+    console.log(node)
+}
+
+const parseArrayExpression = (node) => {
+    console.log(node)
 }
 
 const parseIdentifier = (node) => {
-    node.primitive = PrimitiveType.Unknown
-    scope.vars[node.name] = node.type
+    const varNode = scope.getVar(node.name)
+    if(!varNode) {
+        throw `Uncaught ReferenceError: ${node.name} is not defined`
+    }
+    return varNode
 }
 
 const parseLiteral = (node) => {
@@ -61,6 +77,7 @@ const parseLiteral = (node) => {
             node.primitive = PrimitiveType.String
             break            
     }
+    return node
 }
 
 const parseVariableDeclaration = (node) => {
@@ -71,7 +88,6 @@ const parseVariableDeclaration = (node) => {
 }
 
 const parseVariableDeclarator = (node) => {
-    parse[node.id.type](node.id)
     parse[node.init.type](node.init)
 
     node.primitive = node.init.primitive
@@ -80,9 +96,29 @@ const parseVariableDeclarator = (node) => {
 }
 
 const parseBinaryExpression = (node) => {
-    const leftType = parse[node.left.type](node.left)
-    const rightType = parse[node.right.type](node.right)
-    console.log(node)
+    const leftType = parse[node.left.type](node.left).primitive
+    const rightType = parse[node.right.type](node.right).primitive
+    if(leftType === PrimitiveType.Unknown) {
+        node.primitive = rightType
+    }
+    else {
+        node.primitive = leftType
+    }
+    return node
+}
+
+const parseCallExpression = (node) => {
+    
+}
+
+const parseMemberExpression = (node) => {
+    const objNode = parse[node.object.type](node.object)
+    const propertyNode = objNode.scope.vars[node.property.name]
+    if(!propertyNode) {
+        const memberName = createMemberName(node)
+        throw `Uncaught ReferenceError: ${memberName} is not defined`
+    }
+    return propertyNode
 }
 
 const parseArrowFunctionExpression = (node) => {
@@ -91,10 +127,18 @@ const parseArrowFunctionExpression = (node) => {
     node.scope = new Scope(scope)
     scope = node.scope
 
-    parse[node.body.type](node.body)
     parseParams(node.params)
-
+    parse[node.body.type](node.body)
+    
     scope = prevScope
+}
+
+const parseObjectExpression = (node) => {
+    console.log(node)
+}
+
+const parseNewExpression = (node) => {
+    console.log(node)
 }
 
 const parseClassDeclaration = (node) => {
@@ -115,21 +159,37 @@ const parseImportDeclaration = (node) => {
 
 const parseParams = (params) => {
     for(let n = 0; n < params.length; n++) {
-        const param = params[n]
-        parse[param.type](param)
+        parseParam(params[n])
     }
+}
+
+const parseParam = (param) => {
+    param.primitive = PrimitiveType.Unknown
+    scope.vars[param.name] = param
+}
+
+const createMemberName = (node) => {
+    const name = `${node.object.name}.${node.property.name}`
+    return name
 }
 
 const parse = {
     Body: parseBody,
     BlockStatement: parseBlockStatement,
     ReturnStatement: parseReturnStatement,
+    ExpressionStatement: parseExpressionStatement,
+    IfStatement: parseIfStatement,
+    ArrayExpression: parseArrayExpression,
     Identifier: parseIdentifier,
     Literal: parseLiteral,
     VariableDeclaration: parseVariableDeclaration,
     VariableDeclarator: parseVariableDeclarator,
     BinaryExpression: parseBinaryExpression,
+    MemberExpression: parseMemberExpression,
+    CallExpression: parseCallExpression,
+    NewExpression: parseNewExpression,
     ArrowFunctionExpression: parseArrowFunctionExpression,
+    ObjectExpression: parseObjectExpression,
     ClassDeclaration: parseClassDeclaration,
     ExportDefaultDeclaration: parseExportDefaultDeclaration,
     ExportNamedDeclaration: parseExportNamedDeclaration,

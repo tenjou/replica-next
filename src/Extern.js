@@ -4,10 +4,12 @@ import PrimitiveType from "./PrimitiveType"
 const declareClass = (module, name, members) => {
     const moduleScope = module.scope
     const scope = new Scope(moduleScope)
-    moduleScope.classes[name] = {
+    const node = {
         type: "ClassDeclaration",
         scope
     }
+    moduleScope.vars[name] = node
+
     for(let key in members) {
         const member = members[key]
         scope.vars[key] = member

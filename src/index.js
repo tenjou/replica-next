@@ -21,6 +21,7 @@ const fetchMethod = (rootModule, path) => {
 		.then(response => response.text())
 		.then(text => {
 			module = new Module(fullPath, ext, text)
+			module.scope.parent = rootModule.scope
 			module.importedModules.push(rootModule)
 			modulesLoaded[fullPath] = module
 

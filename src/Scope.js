@@ -1,9 +1,22 @@
 
 class Scope {
-    constructor() {
+    constructor(parent = null) {
+        this.parent = parent
         this.vars = {}
         this.funcs = {}
         this.classes = {}
+    }
+
+    getVar(name) {
+        let scope = this
+        while(scope) {
+            const node = scope.vars[name]
+            if(node) {
+                return node
+            }
+            scope = scope.parent
+        }
+        return null
     }
 }
 
