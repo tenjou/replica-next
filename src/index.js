@@ -7,7 +7,7 @@ import Extern from "./Extern"
 
 const modulesLoaded = {}
 
-const fetchMethod = (rootModule, path) => {
+const fetchMethod = (rootModule, path, isMain) => {
 	let module = null
 	let node = null
 
@@ -32,6 +32,9 @@ const fetchMethod = (rootModule, path) => {
 						.then(() => { return Lexer.run(rootModule, module, node); })
 						.then(() => { Optimizer.run(node) })
 			}
+		})
+		.then(() => {
+			return module
 		})
 }
 
@@ -72,7 +75,9 @@ export default function main() {
 	const rootModule = new Module("", null)
 	Extern.declareStd(rootModule)
 	Lexer.setFetchMethod(fetchMethod)
-	fetchMethod(rootModule, "data/index.js", (module) => {
-		CppCompiler.run(module)
+	fetchMethod(rootModule, "data/index.js")
+	.then((module) => {
+		const output = CppCompiler.run(module)
+		console.log(output)
 	})
 }

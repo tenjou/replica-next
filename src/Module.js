@@ -5,6 +5,7 @@ class Module {
 		this.path = path
 		this.ext = ext
 		this.node = node
+		this.children = []
 		this.importedModules = []
 		this.scope = new Scope()
 	}
