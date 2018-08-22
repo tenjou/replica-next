@@ -3,6 +3,7 @@ class Scope {
     constructor() {
         this.vars = {}
         this.funcs = {}
+        this.classes = {}
     }
 }
 

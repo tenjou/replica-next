@@ -3,6 +3,7 @@ import Lexer from "./Lexer"
 import Optimizer from "./Optimizer"
 import CppCompiler from "./compiler/CppCompiler"
 import Module from "./Module"
+import Extern from "./Extern"
 
 const modulesLoaded = {}
 
@@ -68,6 +69,7 @@ const getExt = (filename) => {
 
 export default function main() {
 	const rootModule = new Module("", null)
+	Extern.declareStd(rootModule)
 	Lexer.setFetchMethod(fetchMethod)
 	fetchMethod(rootModule, "data/index.js", (module) => {
 		CppCompiler.run(module)

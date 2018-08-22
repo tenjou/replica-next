@@ -1,18 +1,10 @@
 import Scope from "./Scope"
+import PrimitiveType from "./PrimitiveType"
 
 let fetchMethod = null
 let rootModule = null
 let module = null
 let scope = null
-
-const PrimitiveType = {
-    Unknown: 0,
-    Number: 1,
-    Boolean: 2,
-    String: 3,
-    Function: 4,
-    Object: 5
-}
 
 const run = (nextRootModule, nextModule, node) => {
     rootModule = nextRootModule
@@ -52,7 +44,7 @@ const parseReturnStatement = (node) => {
 }
 
 const parseIdentifier = (node) => {
-    node.type = PrimitiveType.Unknown
+    node.primitive = PrimitiveType.Unknown
     scope.vars[node.name] = node.type
 }
 
@@ -60,13 +52,13 @@ const parseLiteral = (node) => {
     const type = typeof node
     switch(type) {
         case "number":
-            node.type = PrimitiveType.Number
+            node.primitive = PrimitiveType.Number
             break
         case "boolean":
-            node.type = PrimitiveType.Boolean
+            node.primitive = PrimitiveType.Boolean
             break
         case "string":
-            node.type = PrimitiveType.String
+            node.primitive = PrimitiveType.String
             break            
     }
 }
@@ -82,7 +74,7 @@ const parseVariableDeclarator = (node) => {
     parse[node.id.type](node.id)
     parse[node.init.type](node.init)
 
-    node.type = node.init.type
+    node.primitive = node.init.primitive
     scope.vars[node.id.name] = node
     scope.funcs[node.id.name] = node
 }
@@ -95,7 +87,7 @@ const parseBinaryExpression = (node) => {
 
 const parseArrowFunctionExpression = (node) => {
     const prevScope = scope
-    node.type = PrimitiveType.Function
+    node.primitive = PrimitiveType.Function
     node.scope = new Scope(scope)
     scope = node.scope
 
