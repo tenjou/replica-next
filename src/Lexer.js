@@ -37,14 +37,29 @@ const parseVariableDeclaration = (node) => {
     console.log(node)
 }
 
+const parseClassDeclaration = (node) => {
+    console.log(node)
+}
+
+const parseExportDefaultDeclaration = (node) => {
+    console.log(node)
+}
+
+const parseExportNamedDeclaration = (node) => {
+    console.log(node)
+}
+
 const parseImportDeclaration = (node) => {
     return fetchMethod(ctx.module, node.source.value)
 }
 
 const parse = {
     Body: parseBody,
+    VariableDeclaration: parseVariableDeclaration,
+    ClassDeclaration: parseClassDeclaration,
+    ExportDefaultDeclaration: parseExportDefaultDeclaration,
+    ExportNamedDeclaration: parseExportNamedDeclaration,
     ImportDeclaration: (node) => {},
-    ParseVariableDeclaration: parseVariableDeclaration
 }
 
 const setFetchMethod = (func) => {
