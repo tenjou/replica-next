@@ -16,18 +16,23 @@ const declareClass = (module, name, members) => {
     }
 }
 
-const declareMath = (module) => {
+const declareStd = (module) => {
     declareClass(module, "Math", {
         PI: {
             type: "Number",
             primitive: PrimitiveType.Number,
             value: 3.141592653589793
+        },
+        sqrt: {
+
+        },
+        min: {
+
+        },
+        max: {
+            
         }
     })
-}
-
-const declareStd = (module) => {
-    declareMath(module)
 }
 
 export { declareStd }

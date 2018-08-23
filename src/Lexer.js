@@ -1,6 +1,8 @@
 import Scope from "./Scope"
 import PrimitiveType from "./PrimitiveType"
 
+const PrimitiveTypeKey = Object.keys(PrimitiveType)
+
 let fetchMethod = null
 let rootModule = null
 let module = null
@@ -28,6 +30,13 @@ const parseImports = (nodes) => {
     return Promise.all(promises)
 }
 
+const parseImportDeclaration = (node) => {
+    return fetchMethod(module, node.source.value)
+        .then((module) => {
+            node.module = module 
+        })
+}
+
 const parseBody = (nodes) => {
     for(let n = 0; n < nodes.length; n++) {
         const node = nodes[n]
@@ -45,7 +54,7 @@ const parseReturnStatement = (node) => {
 }
 
 const parseExpressionStatement = (node) => {
-    console.log(node)
+    parse[node.expression.type](node.expression)
 }
 
 const parseIfStatement = (node) => {
@@ -59,14 +68,13 @@ const parseArrayExpression = (node) => {
 const parseIdentifier = (node) => {
     const varNode = scope.getVar(node.name)
     if(!varNode) {
-        throw `Uncaught ReferenceError: ${node.name} is not defined`
+        throw `ReferenceError: ${node.name} is not defined`
     }
     return varNode
 }
 
 const parseLiteral = (node) => {
-    const type = typeof node
-    switch(type) {
+    switch(typeof node.value) {
         case "number":
             node.primitive = PrimitiveType.Number
             break
@@ -108,17 +116,49 @@ const parseBinaryExpression = (node) => {
 }
 
 const parseCallExpression = (node) => {
-    
+    const varNode = scope.getVar(node.callee.name)
+    if(!varNode) {
+        const name = createName(node.callee)
+        throw `ReferenceError: ${name} is not defined`
+    }
+    if(varNode.primitive !== PrimitiveType.Function) {
+        const name = createName(varNode)
+        throw `InvalidCall: ${name} not a function`
+    }
+
+    const funcNode = varNode.init
+    if(!funcNode.parsed) {
+        funcNode.parsed = true
+
+        const prevScope = scope
+        scope = funcNode.scope
+        parse[funcNode.body.type](funcNode.body)
+        scope = prevScope
+    }
+
+    parseArgs(funcNode.params, node.arguments)
 }
 
 const parseMemberExpression = (node) => {
     const objNode = parse[node.object.type](node.object)
     const propertyNode = objNode.scope.vars[node.property.name]
     if(!propertyNode) {
-        const memberName = createMemberName(node)
-        throw `Uncaught ReferenceError: ${memberName} is not defined`
+        const name = createName(node)
+        throw `ReferenceError: ${name} is not defined`
     }
     return propertyNode
+}
+
+const parseFunctionExpression = (node) => {
+    const prevScope = scope
+    node.primitive = PrimitiveType.Function
+    node.scope = new Scope(scope)
+    scope = node.scope
+
+    parseParams(node.params)
+    node.parsed = false
+    
+    scope = prevScope  
 }
 
 const parseArrowFunctionExpression = (node) => {
@@ -128,7 +168,7 @@ const parseArrowFunctionExpression = (node) => {
     scope = node.scope
 
     parseParams(node.params)
-    parse[node.body.type](node.body)
+    node.parsed = false
     
     scope = prevScope
 }
@@ -153,10 +193,6 @@ const parseExportNamedDeclaration = (node) => {
     console.log(node)
 }
 
-const parseImportDeclaration = (node) => {
-    return fetchMethod(module, node.source.value)
-}
-
 const parseParams = (params) => {
     for(let n = 0; n < params.length; n++) {
         parseParam(params[n])
@@ -168,9 +204,35 @@ const parseParam = (param) => {
     scope.vars[param.name] = param
 }
 
-const createMemberName = (node) => {
-    const name = `${node.object.name}.${node.property.name}`
-    return name
+const parseArgs = (params, args) => {
+    if(params.length !== args.length) {
+        throw `ArgumentCountMismatch: Expected to have: ${params.length} arguments but instead got: ${args.length}`
+    }
+    for(let n = 0; n < args.length; n++) {
+        parseArg(params[n], args[n])
+    }
+}
+
+const parseArg = (param, arg) => {
+    const argType = parse[arg.type](arg).primitive
+    if(param.primitive === PrimitiveType.Unknown) {
+        param.primitive = argType
+    }
+    else if(param.primitive !== argType) {
+        throw `TypeMismatch: Expected type: ${PrimitiveTypeKey[param.primitive]} but instead got: ${PrimitiveTypeKey[argType]}`
+    }
+}
+
+const createName = (node) => {
+    switch(node.type) {
+        case "Identifier":
+            return node.name
+        case "VariableDeclarator":
+            return createName(node.id)
+        case "MemberExpression":
+            return `${node.object.name}.${node.property.name}`            
+    }
+    throw "NotImplemented"
 }
 
 const parse = {
@@ -188,6 +250,7 @@ const parse = {
     MemberExpression: parseMemberExpression,
     CallExpression: parseCallExpression,
     NewExpression: parseNewExpression,
+    FunctionExpression: parseFunctionExpression,
     ArrowFunctionExpression: parseArrowFunctionExpression,
     ObjectExpression: parseObjectExpression,
     ClassDeclaration: parseClassDeclaration,

@@ -1,11 +1,10 @@
 import Scope from "./Scope"
 
 class Module {
-	constructor(path, ext, node) {
+	constructor(path, ext) {
 		this.path = path
 		this.ext = ext
-		this.node = node
-		this.children = []
+		this.data = null
 		this.importedModules = []
 		this.scope = new Scope()
 	}

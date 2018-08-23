@@ -1,9 +1,11 @@
+import PrimitiveType from "../PrimitiveType"
 
 let scope = null
 
 const run = (module) => {
     console.log("compile-cpp")
     scope = module.scope
+    parseBody(module.data.body)
 
     let output = "int main() {\n"
     output += "\treturn 1;\n"
@@ -47,11 +49,18 @@ const parseLiteral = (node) => {
 }
 
 const parseVariableDeclaration = (node) => {
-    console.log(node)
+    const decls = node.declarations
+    for(let n = 0; n < decls.length; n++) {
+        parseVariableDeclarator(decls[n])
+    }
 }
 
 const parseVariableDeclarator = (node) => {
-    console.log(node)
+    let output = `${getType(node)} ${node.id.name}`
+    if(node.primitive === PrimitiveType.Function) {
+        output += parse[node.init.type](node.init)
+    }
+    console.log(output)
 }
 
 const parseBinaryExpression = (node) => {
@@ -71,7 +80,9 @@ const parseNewExpression = (node) => {
 }
 
 const parseArrowFunctionExpression = (node) => {
-    console.log(node)
+    const paramsOutput = parseParams(node.params)
+    const output = `(${paramsOutput}) {}`
+    return output
 }
 
 const parseObjectExpression = (node) => {
@@ -91,7 +102,33 @@ const parseExportNamedDeclaration = (node) => {
 }
 
 const parseImportDeclaration = (node) => {
-    console.log(node)
+    if(node.module.ext === "js") {
+        parseBody(node.module.data.body)
+    }
+}
+
+const parseParams = (params) => {
+    if(params.length === 0) {
+        return ""
+    }
+
+    let output = parseParam(params[0])
+    for(let n = 1; n < params.length; n++) {
+        output += `, ${parseParam(params[n])}`
+    }
+    return output
+}
+
+const parseParam = (param) => {
+    return `${getType(param)} ${param.name}`
+}
+
+const getType = (node) => {
+    switch(node.primitive) {
+        case PrimitiveType.Number:
+            return "double"
+    }
+    return "void"
 }
 
 const parse = {

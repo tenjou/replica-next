@@ -1,7 +1,6 @@
 import { EPSILON } from "./Common"
 
-class Matrix4
-{
+class Matrix4 {
 	constructor(matrix) {
 		if(matrix) {
 			this.m = new Float32Array(matrix)
@@ -24,8 +23,7 @@ class Matrix4
 		return m
 	}
 
-	identity()
-	{
+	identity() {
 		this.m[0] = 1.0
 		this.m[1] = 0.0
 		this.m[2] = 0.0
@@ -51,16 +49,14 @@ class Matrix4
 		this.m.assing(matrix)
 	}
 
-	translate(x, y, z)
-	{
+	translate(x, y, z) {
 		this.m[12] = this.m[0] * x + this.m[4] * y + this.m[8] * z + this.m[12]
 		this.m[13] = this.m[1] * x + this.m[5] * y + this.m[9] * z + this.m[13]
 		this.m[14] = this.m[2] * x + this.m[6] * y + this.m[10] * z + this.m[14]
 		this.m[15] = this.m[3] * x + this.m[7] * y + this.m[11] * z + this.m[15]
 	}
 
-	rotate(rad, x, y, z)
-	{
+	rotate(rad, x, y, z) {
 		const a00 = this.m[0]
 		const a01 = this.m[1]
 		const a02 = this.m[2]
@@ -110,8 +106,7 @@ class Matrix4
 		this.m[11] = a03 * b20 + a13 * b21 + a23 * b22
 	}
 
-	scale(x, y, z)
-	{
+	scale(x, y, z) {
 		this.m[0] *= x
 		this.m[1] *= x
 		this.m[2] *= x
@@ -128,8 +123,7 @@ class Matrix4
 		this.m[11] *= z
 	}
 
-	mul(src)
-	{
+	mul(src) {
 		let a0 = this.m[0]
 		let a1 = this.m[1]
 		let a2 = this.m[2]
@@ -233,9 +227,9 @@ class Matrix4
 		let Dy = Py - targetY
 		let Dz = Pz - targetZ
 
-		if(Math.abs(Dx) < EPSILON &&
-		   Math.abs(Dy) < EPSILON &&
-		   Math.abs(Dz) < EPSILON)
+		if(Math.abs(Dx) < Number.EPSILON &&
+		   Math.abs(Dy) < Number.EPSILON &&
+		   Math.abs(Dz) < Number.EPSILON)
 		{
 			return this.identity()
 		}

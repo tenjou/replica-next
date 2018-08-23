@@ -5,6 +5,7 @@ class Scope {
         this.vars = {}
         this.funcs = {}
         this.classes = {}
+        this.returns = []
     }
 
     getVar(name) {

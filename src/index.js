@@ -20,7 +20,7 @@ const fetchMethod = (rootModule, path, isMain) => {
 	return fetch(fullPath)
 		.then(response => response.text())
 		.then(text => {
-			module = new Module(fullPath, ext, text)
+			module = new Module(fullPath, ext)
 			module.scope.parent = rootModule.scope
 			module.importedModules.push(rootModule)
 			modulesLoaded[fullPath] = module
@@ -28,9 +28,13 @@ const fetchMethod = (rootModule, path, isMain) => {
 			switch(ext) {
 				case "js":
 					node = acorn.parse(text, { sourceType: "module" })
+					module.data = node
 					return Promise.resolve()
 						.then(() => { return Lexer.run(rootModule, module, node); })
 						.then(() => { Optimizer.run(node) })
+				default:
+					module.data = text
+					break
 			}
 		})
 		.then(() => {
@@ -75,7 +79,7 @@ export default function main() {
 	const rootModule = new Module("", null)
 	Extern.declareStd(rootModule)
 	Lexer.setFetchMethod(fetchMethod)
-	fetchMethod(rootModule, "data/index.js")
+	fetchMethod(rootModule, "data/index2.js")
 	.then((module) => {
 		const output = CppCompiler.run(module)
 		console.log(output)
