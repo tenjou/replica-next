@@ -1,13 +1,16 @@
 {
-	"name": "untitled",
+	"name": "replica-next",
 	"version": "0.1.0",
 	"description": "",
-	"author": "",
+	"author": "Arturs Šefers",
 	"main": "src/index.js",
 	"scripts": {
-		"build": "build-replica src/index.js -i index.html -t -u",
-		"dev": "build-replica src/index.js -i index.html -t -s 8090 8091 -si"
+		"build": "node_modules/.bin/build-replica src/index.js -i index.html -t -u",
+		"dev": "node_modules/.bin/build-replica src/index.js -i index.html -t -s 8090 8091 -si"
 	},
 	"keywords": [],
-	"license": "MIT"
+	"license": "MIT",
+	"dependencies": {
+		"build-replica": "^0.2.59"
+	}
 }
