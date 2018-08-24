@@ -2,24 +2,35 @@ import PrimitiveType from "../PrimitiveType"
 
 let scope = null
 let tabs = ""
+let outerOutput = ""
 
 const run = (module) => {
     scope = module.scope
-    let output = parseBody(module.data.body)
-    output += "\n\nint main() {\n"
+    let output = "\nint main() {\n"
+    incTabs()
+    output += parseBody(module.data.body)
+    decTabs()
     output += "}\n"
-    return output
+    return outerOutput + output
 }
+
 
 const parseBody = (buffer) => {
     if(buffer.length === 0) {
         return ""
     }
+    let output = ""
     let node = buffer[0]
-    let output = `${tabs}${parse[node.type](node)}`
+    let nodeOutput = parse[node.type](node)
+    if(nodeOutput) {
+        output = `${tabs}${nodeOutput}\n`
+    }
     for(let n = 1; n < buffer.length; n++) {
         node = buffer[n]
-        output += `\n${tabs}${parse[node.type](node)}`
+        nodeOutput = parse[node.type](node)
+        if(nodeOutput) {
+            output += `${tabs}${nodeOutput}\n`
+        }
     }
     return output
 }
@@ -59,7 +70,10 @@ const parseVariableDeclaration = (node) => {
     let output = ""
     const decls = node.declarations
     for(let n = 0; n < decls.length; n++) {
-        output += parseVariableDeclarator(decls[n])
+        const nodeOutput = parseVariableDeclarator(decls[n])
+        if(nodeOutput) {
+            output += nodeOutput
+        }
     }
     return output
 }
@@ -67,7 +81,12 @@ const parseVariableDeclaration = (node) => {
 const parseVariableDeclarator = (node) => {
     let output = `${getType(node.init)} ${node.id.name}`
     if(node.primitive === PrimitiveType.Function) {
+        let prevTabs = tabs
+        tabs = ""
         output += parse[node.init.type](node.init)
+        tabs = prevTabs
+        outerOutput += output + "\n"
+        output = null
     }
     return output
 }
@@ -91,11 +110,19 @@ const parseNewExpression = (node) => {
     console.log(node)
 }
 
+const parseFunctionExpression = (node) => {
+    const paramsOutput = parseParams(node.params)
+    let output = `(${paramsOutput}) {\n`
+    output += parse[node.body.type](node.body)
+    output += `}`
+    return output
+}
+
 const parseArrowFunctionExpression = (node) => {
     const paramsOutput = parseParams(node.params)
     let output = `(${paramsOutput}) {\n`
     output += parse[node.body.type](node.body)
-    output += `\n}`
+    output += `}`
     return output
 }
 

@@ -3,7 +3,7 @@ class Scope {
     constructor(parent = null) {
         this.parent = parent
         this.vars = {}
-        this.funcs = {}
+        this.funcs = []
         this.classes = {}
         this.returns = []
     }

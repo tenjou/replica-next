@@ -101,7 +101,7 @@ const parseVariableDeclarator = (node) => {
 
     node.primitive = node.init.primitive
     scope.vars[node.id.name] = node
-    scope.funcs[node.id.name] = node
+    scope.funcs.push(node)
 }
 
 const parseBinaryExpression = (node) => {

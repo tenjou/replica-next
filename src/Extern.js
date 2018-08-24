@@ -19,9 +19,10 @@ const declareClass = (module, name, members) => {
 const declareStd = (module) => {
     declareClass(module, "Math", {
         PI: {
-            type: "Number",
+            type: "Literal",
             primitive: PrimitiveType.Number,
-            value: 3.141592653589793
+            value: 3.141592653589793,
+            isStatic: true
         },
         sqrt: {
 
