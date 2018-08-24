@@ -1,35 +1,42 @@
 import PrimitiveType from "../PrimitiveType"
 
 let scope = null
+let tabs = ""
 
 const run = (module) => {
-    console.log("compile-cpp")
     scope = module.scope
-    parseBody(module.data.body)
-
-    let output = "int main() {\n"
-    output += "\treturn 1;\n"
+    let output = parseBody(module.data.body)
+    output += "\n\nint main() {\n"
     output += "}\n"
     return output
 }
 
 const parseBody = (buffer) => {
-    for(let n = 0; n < buffer.length; n++) {
-        const node = buffer[n]
-        parse[node.type](node)
+    if(buffer.length === 0) {
+        return ""
     }
+    let node = buffer[0]
+    let output = `${tabs}${parse[node.type](node)}`
+    for(let n = 1; n < buffer.length; n++) {
+        node = buffer[n]
+        output += `\n${tabs}${parse[node.type](node)}`
+    }
+    return output
 }
 
 const parseBlockStatement = (node) => {
-    console.log(node)
+    incTabs()
+    const output = parseBody(node.body)
+    decTabs()
+    return output
 }
 
 const parseReturnStatement = (node) => {
-    console.log(node)
+    return `return ${parse[node.argument.type](node.argument)};`
 }
 
 const parseExpressionStatement = (node) => {
-    console.log(node)
+    return parse[node.expression.type](node.expression)
 }
 
 const parseIfStatement = (node) => {
@@ -41,38 +48,43 @@ const parseArrayExpression = (node) => {
 }
 
 const parseIdentifier = (node) => {
-    console.log(node)
+    return node.name
 }
 
 const parseLiteral = (node) => {
-    console.log(node)
+    return node.value
 }
 
 const parseVariableDeclaration = (node) => {
+    let output = ""
     const decls = node.declarations
     for(let n = 0; n < decls.length; n++) {
-        parseVariableDeclarator(decls[n])
+        output += parseVariableDeclarator(decls[n])
     }
+    return output
 }
 
 const parseVariableDeclarator = (node) => {
-    let output = `${getType(node)} ${node.id.name}`
+    let output = `${getType(node.init)} ${node.id.name}`
     if(node.primitive === PrimitiveType.Function) {
         output += parse[node.init.type](node.init)
     }
-    console.log(output)
+    return output
 }
 
 const parseBinaryExpression = (node) => {
-    console.log(node)
+    return `${parse[node.left.type](node.left)} ${node.operator} ${parse[node.right.type](node.right)}` 
 }
 
 const parseMemberExpression = (node) => {
-    console.log(node)
+    const connection = node.property.isStatic ? "::" : "."
+    return parse[node.object.type](node.object) + connection + parse[node.property.type](node.property)
 }
 
 const parseCallExpression = (node) => {
-    console.log(node)
+    const params = parseArgs(node.arguments)
+    const output = createName(node.callee) + `(${params});`
+    return output
 }
 
 const parseNewExpression = (node) => {
@@ -81,7 +93,9 @@ const parseNewExpression = (node) => {
 
 const parseArrowFunctionExpression = (node) => {
     const paramsOutput = parseParams(node.params)
-    const output = `(${paramsOutput}) {}`
+    let output = `(${paramsOutput}) {\n`
+    output += parse[node.body.type](node.body)
+    output += `\n}`
     return output
 }
 
@@ -120,15 +134,51 @@ const parseParams = (params) => {
 }
 
 const parseParam = (param) => {
-    return `${getType(param)} ${param.name}`
+    return `${getPrimitive(param.primitive)} ${param.name}`
+}
+
+const parseArgs = (args) => {
+    if(args.length === 0) {
+        return ""
+    }
+
+    let output = parseArg(args[0])
+    for(let n = 1; n < args.length; n++) {
+        output += `, ${parseArg(args[n])}`
+    }
+    return output
+}
+
+const parseArg = (arg) => {
+    return parse[arg.type](arg)
 }
 
 const getType = (node) => {
-    switch(node.primitive) {
+    switch(node.type) {
+        case "ArrowFunctionExpression":
+            return getPrimitive(node.returnPrimitive)
+    }
+    return getPrimitive(node.primitive)
+}
+
+const getPrimitive = (primitive) => {
+    switch(primitive) {
         case PrimitiveType.Number:
             return "double"
     }
     return "void"
+}
+
+const createName = (node) => {
+    return node.name
+}
+
+const incTabs = () => {
+    tabs += "\t"
+}
+
+const decTabs = () => {
+    tabs = tabs.slice(0, -1)
 }
 
 const parse = {
