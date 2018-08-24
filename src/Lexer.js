@@ -51,6 +51,7 @@ const parseBlockStatement = (node) => {
 const parseReturnStatement = (node) => {
     parse[node.argument.type](node.argument)
     node.primitive = node.argument.primitive
+    scope.returns.push(node)
 }
 
 const parseExpressionStatement = (node) => {
@@ -133,6 +134,19 @@ const parseCallExpression = (node) => {
         const prevScope = scope
         scope = funcNode.scope
         parse[funcNode.body.type](funcNode.body)
+        
+        const returns = scope.returns
+        let returnType = PrimitiveType.Unknown
+        for(let n = 0; n < returns.length; n++) {
+            const itemType = returns[n].primitive
+            if(returnType === PrimitiveType.Unknown) {
+                returnType = itemType
+            }
+            else if(returnType !== itemType) {
+                throw `TypeMismatch: Expected type: ${PrimitiveTypeKey[funcType]} but instead got: ${PrimitiveTypeKey[itemType]}`
+            }
+        }
+        funcNode.returnPrimitive = returnType
         scope = prevScope
     }
 
