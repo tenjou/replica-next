@@ -110,7 +110,7 @@ const parseAssignmentExpression = (node) => {
         left.primitive = right.primitive
     }
     else if(left.primitive !== right.primitive) {
-        throw `TypeMismatch: Expected type: ${PrimitiveTypeKey[right.primitive]} but instead got: ${PrimitiveTypeKey[left.primitive]}`
+        throw `TypeMismatch: Expected type "${PrimitiveTypeKey[right.primitive]}" but instead got "${PrimitiveTypeKey[left.primitive]}"`
     }    
 }
 
@@ -153,7 +153,7 @@ const parseCallExpression = (node) => {
                 returnType = itemType
             }
             else if(returnType !== itemType) {
-                throw `TypeMismatch: Expected type: ${PrimitiveTypeKey[funcType]} but instead got: ${PrimitiveTypeKey[itemType]}`
+                throw `TypeMismatch: Expected type "${PrimitiveTypeKey[funcType]}" but instead got "${PrimitiveTypeKey[itemType]}"`
             }
         }
         funcNode.returnPrimitive = returnType
@@ -232,7 +232,7 @@ const parseParam = (param) => {
 
 const parseArgs = (params, args) => {
     if(params.length !== args.length) {
-        throw `ArgumentCountMismatch: Expected to have: ${params.length} arguments but instead got: ${args.length}`
+        throw `ArgumentCountMismatch: Expected to have${params.length} arguments but instead got: ${args.length}`
     }
     for(let n = 0; n < args.length; n++) {
         parseArg(params[n], args[n])
@@ -245,7 +245,7 @@ const parseArg = (param, arg) => {
         param.primitive = argType
     }
     else if(param.primitive !== argType) {
-        throw `TypeMismatch: Expected type: ${PrimitiveTypeKey[param.primitive]} but instead got: ${PrimitiveTypeKey[argType]}`
+        throw `TypeMismatch: Expected type "${PrimitiveTypeKey[param.primitive]}" but instead got "${PrimitiveTypeKey[argType]}"`
     }
 }
 

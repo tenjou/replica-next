@@ -200,6 +200,8 @@ const getPrimitive = (primitive) => {
     switch(primitive) {
         case PrimitiveType.Number:
             return "double"
+        case PrimitiveType.Boolean:
+            return "bool"
         case PrimitiveType.String:
             return "std::string"
     }
