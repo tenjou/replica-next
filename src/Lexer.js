@@ -97,11 +97,21 @@ const parseVariableDeclaration = (node) => {
 }
 
 const parseVariableDeclarator = (node) => {
-    parse[node.init.type](node.init)
-
-    node.primitive = node.init.primitive
+    node.varNode = parse[node.init.type](node.init)
+    node.primitive = node.varNode.primitive
     scope.vars[node.id.name] = node
     scope.funcs.push(node)
+}
+
+const parseAssignmentExpression = (node) => {
+    const left = parse[node.left.type](node.left)
+    const right = parse[node.right.type](node.right)
+    if(left.primitive === PrimitiveType.Unknown) {
+        left.primitive = right.primitive
+    }
+    else if(left.primitive !== right.primitive) {
+        throw `TypeMismatch: Expected type: ${PrimitiveTypeKey[right.primitive]} but instead got: ${PrimitiveTypeKey[left.primitive]}`
+    }    
 }
 
 const parseBinaryExpression = (node) => {
@@ -173,6 +183,7 @@ const parseFunctionExpression = (node) => {
     node.parsed = false
     
     scope = prevScope  
+    return node
 }
 
 const parseArrowFunctionExpression = (node) => {
@@ -185,6 +196,7 @@ const parseArrowFunctionExpression = (node) => {
     node.parsed = false
     
     scope = prevScope
+    return node
 }
 
 const parseObjectExpression = (node) => {
@@ -260,6 +272,7 @@ const parse = {
     Literal: parseLiteral,
     VariableDeclaration: parseVariableDeclaration,
     VariableDeclarator: parseVariableDeclarator,
+    AssignmentExpression: parseAssignmentExpression,
     BinaryExpression: parseBinaryExpression,
     MemberExpression: parseMemberExpression,
     CallExpression: parseCallExpression,

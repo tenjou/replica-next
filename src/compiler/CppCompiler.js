@@ -6,14 +6,14 @@ let outerOutput = ""
 
 const run = (module) => {
     scope = module.scope
+    const includes = `#include "replica.cpp"\n\n`
     let output = "\nint main() {\n"
     incTabs()
     output += parseBody(module.data.body)
     decTabs()
     output += "}\n"
-    return outerOutput + output
+    return includes + outerOutput + output
 }
-
 
 const parseBody = (buffer) => {
     if(buffer.length === 0) {
@@ -23,13 +23,13 @@ const parseBody = (buffer) => {
     let node = buffer[0]
     let nodeOutput = parse[node.type](node)
     if(nodeOutput) {
-        output = `${tabs}${nodeOutput}\n`
+        output = `${tabs}${nodeOutput};\n`
     }
     for(let n = 1; n < buffer.length; n++) {
         node = buffer[n]
         nodeOutput = parse[node.type](node)
         if(nodeOutput) {
-            output += `${tabs}${nodeOutput}\n`
+            output += `${tabs}${nodeOutput};\n`
         }
     }
     return output
@@ -43,7 +43,7 @@ const parseBlockStatement = (node) => {
 }
 
 const parseReturnStatement = (node) => {
-    return `return ${parse[node.argument.type](node.argument)};`
+    return `return ${parse[node.argument.type](node.argument)}`
 }
 
 const parseExpressionStatement = (node) => {
@@ -63,7 +63,7 @@ const parseIdentifier = (node) => {
 }
 
 const parseLiteral = (node) => {
-    return node.value
+    return node.raw
 }
 
 const parseVariableDeclaration = (node) => {
@@ -79,7 +79,7 @@ const parseVariableDeclaration = (node) => {
 }
 
 const parseVariableDeclarator = (node) => {
-    let output = `${getType(node.init)} ${node.id.name}`
+    let output = `${getType(node.varNode)} ${node.id.name}`
     if(node.primitive === PrimitiveType.Function) {
         let prevTabs = tabs
         tabs = ""
@@ -88,6 +88,14 @@ const parseVariableDeclarator = (node) => {
         outerOutput += output + "\n"
         output = null
     }
+    else {
+        output += " = "  + parse[node.init.type](node.init)
+    }
+    return output
+}
+
+const parseAssignmentExpression = (node) => {
+    const output = `${parse[node.left.type](node.left)} = ${parse[node.right.type](node.right)}`
     return output
 }
 
@@ -102,7 +110,7 @@ const parseMemberExpression = (node) => {
 
 const parseCallExpression = (node) => {
     const params = parseArgs(node.arguments)
-    const output = createName(node.callee) + `(${params});`
+    const output = createName(node.callee) + `(${params})`
     return output
 }
 
@@ -192,6 +200,8 @@ const getPrimitive = (primitive) => {
     switch(primitive) {
         case PrimitiveType.Number:
             return "double"
+        case PrimitiveType.String:
+            return "std::string"
     }
     return "void"
 }
@@ -219,6 +229,7 @@ const parse = {
     Literal: parseLiteral,
     VariableDeclaration: parseVariableDeclaration,
     VariableDeclarator: parseVariableDeclarator,
+    AssignmentExpression: parseAssignmentExpression,
     BinaryExpression: parseBinaryExpression,
     MemberExpression: parseMemberExpression,
     CallExpression: parseCallExpression,
