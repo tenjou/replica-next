@@ -59,7 +59,12 @@ const parseExpressionStatement = (node) => {
 }
 
 const parseIfStatement = (node) => {
-    console.log(node)
+    parse[node.test.type](node.test)
+    parse[node.consequent.type](node.consequent)
+    if(node.alternate) {
+        parse[node.alternate.type](node.alternate)
+    }
+    return node
 }
 
 const parseArrayExpression = (node) => {
@@ -112,6 +117,11 @@ const parseAssignmentExpression = (node) => {
     else if(left.primitive !== right.primitive) {
         throw `TypeMismatch: Expected type "${PrimitiveTypeKey[right.primitive]}" but instead got "${PrimitiveTypeKey[left.primitive]}"`
     }    
+}
+
+const parseUnaryExpression = (node) => {
+    parse[node.argument.type](node.argument)
+    return node
 }
 
 const parseBinaryExpression = (node) => {
@@ -273,6 +283,7 @@ const parse = {
     VariableDeclaration: parseVariableDeclaration,
     VariableDeclarator: parseVariableDeclarator,
     AssignmentExpression: parseAssignmentExpression,
+    UnaryExpression: parseUnaryExpression,
     BinaryExpression: parseBinaryExpression,
     MemberExpression: parseMemberExpression,
     CallExpression: parseCallExpression,

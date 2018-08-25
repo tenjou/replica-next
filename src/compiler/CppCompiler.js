@@ -7,7 +7,7 @@ let outerOutput = ""
 const run = (module) => {
     scope = module.scope
     const includes = `#include "replica.cpp"\n\n`
-    let output = "\nint main() {\n"
+    let output = "int main() {\n"
     incTabs()
     output += parseBody(module.data.body)
     decTabs()
@@ -20,16 +20,19 @@ const parseBody = (buffer) => {
         return ""
     }
     let output = ""
-    let node = buffer[0]
-    let nodeOutput = parse[node.type](node)
-    if(nodeOutput) {
-        output = `${tabs}${nodeOutput};\n`
-    }
-    for(let n = 1; n < buffer.length; n++) {
-        node = buffer[n]
-        nodeOutput = parse[node.type](node)
+    for(let n = 0; n < buffer.length; n++) {
+        const node = buffer[n]
+        let nodeOutput = parse[node.type](node)
         if(nodeOutput) {
-            output += `${tabs}${nodeOutput};\n`
+            nodeOutput = `${tabs}${nodeOutput}`
+            switch(node.type) {
+                case "IfStatement":
+                    output += `${nodeOutput}\n`
+                    break
+                default:
+                    output += `${nodeOutput};\n`
+                    break
+            }
         }
     }
     return output
@@ -37,8 +40,9 @@ const parseBody = (buffer) => {
 
 const parseBlockStatement = (node) => {
     incTabs()
-    const output = parseBody(node.body)
+    let output = `{\n${parseBody(node.body)}`
     decTabs()
+    output += tabs + "}"
     return output
 }
 
@@ -50,8 +54,13 @@ const parseExpressionStatement = (node) => {
     return parse[node.expression.type](node.expression)
 }
 
-const parseIfStatement = (node) => {
-    console.log(node)
+const parseIfStatement = (node, head = true) => {
+    let output = `if(${parse[node.test.type](node.test)}) `
+    output += parse[node.consequent.type](node.consequent)
+    if(node.alternate) {
+        output += `\n${tabs}else ${parse[node.alternate.type](node.alternate, false)}`
+    }
+    return output
 }
 
 const parseArrayExpression = (node) => {
@@ -99,6 +108,11 @@ const parseAssignmentExpression = (node) => {
     return output
 }
 
+const parseUnaryExpression = (node) => {
+    const output = `${node.operator}${parse[node.argument.type](node.argument)}`
+    return output
+}
+
 const parseBinaryExpression = (node) => {
     return `${parse[node.left.type](node.left)} ${node.operator} ${parse[node.right.type](node.right)}` 
 }
@@ -120,17 +134,15 @@ const parseNewExpression = (node) => {
 
 const parseFunctionExpression = (node) => {
     const paramsOutput = parseParams(node.params)
-    let output = `(${paramsOutput}) {\n`
-    output += parse[node.body.type](node.body)
-    output += `}`
+    let output = `(${paramsOutput}) `
+    output += parse[node.body.type](node.body) + "\n"
     return output
 }
 
 const parseArrowFunctionExpression = (node) => {
     const paramsOutput = parseParams(node.params)
-    let output = `(${paramsOutput}) {\n`
-    output += parse[node.body.type](node.body)
-    output += `}`
+    let output = `(${paramsOutput}) `
+    output += parse[node.body.type](node.body) + "\n"
     return output
 }
 
@@ -232,6 +244,7 @@ const parse = {
     VariableDeclaration: parseVariableDeclaration,
     VariableDeclarator: parseVariableDeclarator,
     AssignmentExpression: parseAssignmentExpression,
+    UnaryExpression: parseUnaryExpression,
     BinaryExpression: parseBinaryExpression,
     MemberExpression: parseMemberExpression,
     CallExpression: parseCallExpression,
