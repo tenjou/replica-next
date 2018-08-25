@@ -10,6 +10,7 @@ const run = (module) => {
     let output = "int main() {\n"
     incTabs()
     output += parseBody(module.data.body)
+    output += `\n${tabs}return 0;\n`
     decTabs()
     output += "}\n"
     return includes + outerOutput + output
