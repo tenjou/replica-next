@@ -19,6 +19,10 @@ class Scope {
         }
         return null
     }
+
+    createScope() {
+        return new Scope(this)
+    }
 }
 
 export default Scope

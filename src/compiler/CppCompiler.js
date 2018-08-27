@@ -89,17 +89,27 @@ const parseVariableDeclaration = (node) => {
 }
 
 const parseVariableDeclarator = (node) => {
-    let output = `${getType(node.varNode)} ${node.id.name}`
+    let output
     if(node.primitive === PrimitiveType.Function) {
+        if(node.parsed) {
+            let prevTabs = tabs
+            tabs = ""
+            output = parse[node.init.type](node.init)
+            output += parse[node.init.type](node.init)
+            tabs = prevTabs
+            outerOutput += output + "\n"
+        }
+        return null
+    }
+    else if(node.primitive === PrimitiveType.Object) {
         let prevTabs = tabs
-        tabs = ""
-        output += parse[node.init.type](node.init)
+        tabs = ""        
+        outerOutput += `struct ${node.id.name} ${parse[node.init.type](node.init)}`
         tabs = prevTabs
-        outerOutput += output + "\n"
-        output = null
+        return null
     }
     else {
-        output += " = "  + parse[node.init.type](node.init)
+        output += `${getType(node.varNode)} ${node.id.name} = ${parse[node.init.type](node.init)}`
     }
     return output
 }
@@ -148,7 +158,18 @@ const parseArrowFunctionExpression = (node) => {
 }
 
 const parseObjectExpression = (node) => {
-    console.log(node)
+    let output = ""
+    let staticOutput = ""
+    incTabs()
+    const props = node.properties
+    for(let n = 0; n < props.length; n++) {
+        const prop = props[n]
+        const baseOutput = `static const ${getType(prop.value)} ${prop.key.name}`
+        output += `${tabs}${baseOutput};\n`
+        staticOutput += `${baseOutput} = ${parse[prop.value.type](prop.value)};\n`
+    }
+    decTabs()
+    return `{\n${output}${tabs}};\n\n${staticOutput}\n`
 }
 
 const parseClassDeclaration = (node) => {
@@ -219,6 +240,18 @@ const getPrimitive = (primitive) => {
             return "std::string"
     }
     return "void"
+}
+
+const parseProps = (props) => {
+    let output = ""
+    for(let n = 0; n < props.length; n++) {
+        output += parseProp(props[n])
+    }
+    return output
+}
+
+const parseProp = (prop) => {
+    
 }
 
 const createName = (node) => {

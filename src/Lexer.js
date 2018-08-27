@@ -217,7 +217,14 @@ const parseArrowFunctionExpression = (node) => {
 }
 
 const parseObjectExpression = (node) => {
-    console.log(node)
+    node.scope = scope.createScope()
+    node.primitive = PrimitiveType.Object
+
+    const prevScope = scope
+    scope = node.scope
+    parseProps(node.properties)
+    scope = prevScope
+    return node.primitive
 }
 
 const parseNewExpression = (node) => {
@@ -238,13 +245,10 @@ const parseExportNamedDeclaration = (node) => {
 
 const parseParams = (params) => {
     for(let n = 0; n < params.length; n++) {
-        parseParam(params[n])
+        const param = params[n]
+        param.primitive = PrimitiveType.Unknown
+        scope.vars[param.name] = param 
     }
-}
-
-const parseParam = (param) => {
-    param.primitive = PrimitiveType.Unknown
-    scope.vars[param.name] = param
 }
 
 const parseArgs = (params, args) => {
@@ -263,6 +267,18 @@ const parseArg = (param, arg) => {
     }
     else if(param.primitive !== argType) {
         throw `TypeMismatch: Expected type "${PrimitiveTypeKey[param.primitive]}" but instead got "${PrimitiveTypeKey[argType]}"`
+    }
+}
+
+const parseProps = (props) => {
+    for(let n = 0; n < props.length; n++) {
+        const prop = props[n]
+        const key = prop.key.name
+        const node = parse[prop.value.type](prop.value)
+        if(scope.vars[key]) {
+            throw `SyntaxError: Identifier '${key}' has already been declared`
+        }
+        scope.vars[key] = node
     }
 }
 
