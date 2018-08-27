@@ -49,7 +49,7 @@ const parseBlockStatement = (node) => {
 }
 
 const parseReturnStatement = (node) => {
-    node.primitive = parse[node.argument.type](node.argument)
+    node.primitive = parse[node.argument.type](node.argument).primitive
     scope.returns.push(node)
 }
 
@@ -76,7 +76,7 @@ const parseIdentifier = (node) => {
     if(!node.varNode) {
         throw `ReferenceError: ${node.name} is not defined`
     }
-    return node.varNode.primitive
+    return node.varNode
 }
 
 const parseLiteral = (node) => {

@@ -89,29 +89,24 @@ const parseVariableDeclaration = (node) => {
 }
 
 const parseVariableDeclarator = (node) => {
-    let output
     if(node.primitive === PrimitiveType.Function) {
-        if(node.parsed) {
-            let prevTabs = tabs
+        if(node.init.parsed) {
+            const prevTabs = tabs
             tabs = ""
-            output = parse[node.init.type](node.init)
-            output += parse[node.init.type](node.init)
+            outerOutput += `${getPrimitive(node.init.returnPrimitive)} ${node.id.name}${parse[node.init.type](node.init)}\n`
             tabs = prevTabs
-            outerOutput += output + "\n"
         }
-        return null
     }
     else if(node.primitive === PrimitiveType.Object) {
-        let prevTabs = tabs
+        const prevTabs = tabs
         tabs = ""        
         outerOutput += `struct ${node.id.name} ${parse[node.init.type](node.init)}`
         tabs = prevTabs
-        return null
     }
     else {
-        output += `${getType(node.varNode)} ${node.id.name} = ${parse[node.init.type](node.init)}`
+        outerOutput += `${getType(node.varNode)} ${node.id.name} = ${parse[node.init.type](node.init)}\n\n`
     }
-    return output
+    return null
 }
 
 const parseAssignmentExpression = (node) => {
@@ -240,18 +235,6 @@ const getPrimitive = (primitive) => {
             return "std::string"
     }
     return "void"
-}
-
-const parseProps = (props) => {
-    let output = ""
-    for(let n = 0; n < props.length; n++) {
-        output += parseProp(props[n])
-    }
-    return output
-}
-
-const parseProp = (prop) => {
-    
 }
 
 const createName = (node) => {

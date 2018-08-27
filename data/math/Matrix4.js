@@ -46,7 +46,7 @@ class Matrix4 {
 	}
 
 	set(matrix) {
-		this.m.assing(matrix)
+		this.m.assign(matrix)
 	}
 
 	translate(x, y, z) {
@@ -376,10 +376,10 @@ class Matrix4 {
 
 	print()
 	{
-		return `Matrix4(${this.m[0]}, ${this.m[1]}, ${this.m[2]}, ${this.m[3]},
+		console.log(`Matrix4(${this.m[0]}, ${this.m[1]}, ${this.m[2]}, ${this.m[3]},
 						${this.m[4]}, ${this.m[5]}, ${this.m[6]}, ${this.m[7]},
 						${this.m[8]}, ${this.m[9]}, ${this.m[10]}, ${this.m[11]},
-						${this.m[12]}, ${this.m[13]}, ${this.m[14]}, ${this.m[15]})`
+						${this.m[12]}, ${this.m[13]}, ${this.m[14]}, ${this.m[15]})`)
 	}
 }
 
