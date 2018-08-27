@@ -143,7 +143,7 @@ const parseBinaryExpression = (node) => {
 }
 
 const parseCallExpression = (node) => {
-    const varNode = scope.getVar(node.callee.name)
+    const varNode = parse[node.callee.type](node.callee)
     if(!varNode) {
         const name = createName(node.callee)
         throw `ReferenceError: ${name} is not defined`

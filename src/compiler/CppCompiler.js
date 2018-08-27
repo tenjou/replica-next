@@ -255,6 +255,10 @@ const parseProp = (prop) => {
 }
 
 const createName = (node) => {
+    switch(node.type) {
+        case "MemberExpression":
+            return `${createName(node.object)}::${createName(node.property)}`
+    }
     return node.name
 }
 

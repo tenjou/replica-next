@@ -16,7 +16,33 @@ const declareClass = (module, name, members) => {
     }
 }
 
+const createFunc = (paramTypes, returnType = PrimitiveType.Unknown) => {
+    const params = createParams(paramTypes)
+    return {
+        primitive: PrimitiveType.Function,
+        init: {
+            params,
+            parsed: true,
+            returnType
+        }
+    }
+}
+
+const createParams = (params) => {
+    const result = new Array(params.length)
+    for(let n = 0; n < params.length; n++) {
+        result[n] = {
+            primitive: params[n]
+        }
+    }
+    return result
+}
+
 const declareStd = (module) => {
+    declareClass(module, "console", {
+        log: createFunc([ PrimitiveType.String ])
+    })
+
     declareClass(module, "Math", {
         PI: {
             type: "Literal",
@@ -24,15 +50,9 @@ const declareStd = (module) => {
             value: 3.141592653589793,
             isStatic: true
         },
-        sqrt: {
-
-        },
-        min: {
-
-        },
-        max: {
-            
-        }
+        sqrt: createFunc([ PrimitiveType.Number ], PrimitiveType.Number),
+        min: createFunc([ PrimitiveType.Number, PrimitiveType.Number ], PrimitiveType.Number),
+        max: createFunc([ PrimitiveType.Number, PrimitiveType.Number ], PrimitiveType.Number)
     })
 }
 
