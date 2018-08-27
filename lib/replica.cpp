@@ -1,6 +1,12 @@
 #include <iostream>
 #include <cmath>
 
+struct console {
+    static void log(std::string text) {
+        std::cout << text << std::endl;
+    }
+};
+
 struct Math {
     static const double PI;
 
