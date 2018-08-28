@@ -46,6 +46,10 @@ const parseBody = (nodes) => {
     }
 }
 
+const parseClassBody = (node) => {
+    parseBody(node.body)
+}
+
 const parseBlockStatement = (node) => {
     parseBody(node.body)
 }
@@ -231,7 +235,7 @@ const parseNewExpression = (node) => {
 }
 
 const parseClassDeclaration = (node) => {
-    console.log(node)
+    parse[node.body.type](node.body)
 }
 
 const parseExportDefaultDeclaration = (node) => {
@@ -240,6 +244,10 @@ const parseExportDefaultDeclaration = (node) => {
 
 const parseExportNamedDeclaration = (node) => {
     console.log(node)
+}
+
+const parseMethodDefinition = (node) => {
+    node.varType = rootScope.vars.Function
 }
 
 const parseParams = (params) => {
@@ -295,6 +303,7 @@ const createName = (node) => {
 
 const parse = {
     Body: parseBody,
+    ClassBody: parseClassBody,
     BlockStatement: parseBlockStatement,
     ReturnStatement: parseReturnStatement,
     ExpressionStatement: parseExpressionStatement,
@@ -317,6 +326,7 @@ const parse = {
     ExportDefaultDeclaration: parseExportDefaultDeclaration,
     ExportNamedDeclaration: parseExportNamedDeclaration,
     ImportDeclaration: (node) => {},
+    MethodDefinition: parseMethodDefinition
 }
 
 const setFetchMethod = (func) => {

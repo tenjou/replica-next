@@ -39,6 +39,14 @@ const parseBody = (buffer) => {
     return output
 }
 
+const parseClassBody = (node) => {
+    incTabs()
+    let output = `{\n${parseBody(node.body)}`
+    decTabs()
+    output += tabs + "}"
+    return output  
+}
+
 const parseBlockStatement = (node) => {
     incTabs()
     let output = `{\n${parseBody(node.body)}`
@@ -168,7 +176,8 @@ const parseObjectExpression = (node) => {
 }
 
 const parseClassDeclaration = (node) => {
-    console.log(node)
+    const output = `struct ${node.id.name} ${parse[node.body.type](node.body)}`
+    return output
 }
 
 const parseExportDefaultDeclaration = (node) => {
@@ -183,6 +192,14 @@ const parseImportDeclaration = (node) => {
     if(node.module.ext === "js") {
         parseBody(node.module.data.body)
     }
+}
+
+const parseMethodDefinition = (node) => {
+    if(!node.value.parsed) { 
+        return null 
+    }
+    const output = "here"
+    console.log(node)
 }
 
 const parseParams = (params) => {
@@ -250,6 +267,7 @@ const decTabs = () => {
 
 const parse = {
     Body: parseBody,
+    ClassBody: parseClassBody,
     BlockStatement: parseBlockStatement,
     ReturnStatement: parseReturnStatement,
     ExpressionStatement: parseExpressionStatement,
@@ -270,7 +288,8 @@ const parse = {
     ClassDeclaration: parseClassDeclaration,
     ExportDefaultDeclaration: parseExportDefaultDeclaration,
     ExportNamedDeclaration: parseExportNamedDeclaration,
-    ImportDeclaration: parseImportDeclaration
+    ImportDeclaration: parseImportDeclaration,
+    MethodDefinition: parseMethodDefinition
 }
 
 export { run }
