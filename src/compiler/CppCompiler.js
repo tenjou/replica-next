@@ -104,7 +104,7 @@ const parseVariableDeclarator = (node) => {
         tabs = prevTabs
     }
     else {
-        outerOutput += `${getType(node.varNode)} ${node.id.name} = ${parse[node.init.type](node.init)}\n\n`
+        outerOutput += `const ${getType(node.varNode)} ${node.id.name} = ${parse[node.init.type](node.init)};\n\n`
     }
     return null
 }
@@ -218,15 +218,10 @@ const parseArg = (arg) => {
 }
 
 const getType = (node) => {
-    switch(node.type) {
-        case "ArrowFunctionExpression":
-            return getPrimitive(node.returnPrimitive)
+    if(!node.varType) {
+        return "void"
     }
-    return getPrimitive(node.primitive)
-}
-
-const getPrimitive = (primitive) => {
-    switch(primitive) {
+    switch(node.varType.primitive) {
         case PrimitiveType.Number:
             return "double"
         case PrimitiveType.Boolean:
@@ -234,7 +229,7 @@ const getPrimitive = (primitive) => {
         case PrimitiveType.String:
             return "std::string"
     }
-    return "void"
+    return node.varType.name
 }
 
 const createName = (node) => {

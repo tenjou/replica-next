@@ -5,6 +5,7 @@ const PrimitiveTypeKey = Object.keys(PrimitiveType)
 
 let fetchMethod = null
 let rootModule = null
+let rootScope = null
 let module = null
 let scope = null
 
@@ -14,6 +15,7 @@ const run = (nextRootModule, nextModule, node) => {
     return parseImports(node.body)
         .then(() => {
             rootModule = nextRootModule
+            rootScope = rootModule.scope
             module = nextModule
             scope = module.scope
             parseBody(node.body)
@@ -82,19 +84,19 @@ const parseIdentifier = (node) => {
 const parseLiteral = (node) => {
     switch(typeof node.value) {
         case "number":
-            node.primitive = PrimitiveType.Number
+            node.varType = rootScope.vars.Number
             break
         case "boolean":
-            node.primitive = PrimitiveType.Boolean
+            node.varType = rootScope.vars.Boolean
             break
         case "string":
-            node.primitive = PrimitiveType.String
+            node.varType = rootScope.vars.String
             break      
         default:
-            node.primitive = PrimitiveType.Unknown
+            node.varType = null
             break      
     }
-    return node.primitive
+    return node
 }
 
 const parseVariableDeclaration = (node) => {
@@ -105,12 +107,9 @@ const parseVariableDeclaration = (node) => {
 }
 
 const parseVariableDeclarator = (node) => {
-    const type = parse[node.init.type](node.init)
-    node.varNode = node.init.varNode ? node.init.varNode : node.init
-    node.primitive = type
+    node.varNode = parse[node.init.type](node.init)
     scope.vars[node.id.name] = node
     scope.funcs.push(node)
-    return type
 }
 
 const parseAssignmentExpression = (node) => {

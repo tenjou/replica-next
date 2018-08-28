@@ -16,6 +16,13 @@ const declareClass = (module, name, members) => {
     }
 }
 
+const declareType = (module, type, primitive) => {
+    module.scope.vars[type] = {
+        type,
+        primitive
+    }
+}
+
 const createFunc = (paramTypes, returnType = PrimitiveType.Unknown) => {
     const params = createParams(paramTypes)
     return {
@@ -39,6 +46,12 @@ const createParams = (params) => {
 }
 
 const declareStd = (module) => {
+    declareType(module, "Number", PrimitiveType.Number)
+    declareType(module, "Boolean", PrimitiveType.Boolean)
+    declareType(module, "String", PrimitiveType.String)
+    declareType(module, "Function", PrimitiveType.Function)
+    declareType(module, "Object", PrimitiveType.Object)
+
     declareClass(module, "console", {
         log: createFunc([ PrimitiveType.String ])
     })
