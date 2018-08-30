@@ -97,23 +97,29 @@ const parseVariableDeclaration = (node) => {
 }
 
 const parseVariableDeclarator = (node) => {
-    if(node.primitive === PrimitiveType.Function) {
-        if(node.init.parsed) {
+    const initNode = node.init
+    switch(initNode.varType.primitive) {
+        case PrimitiveType.Function:
+            if(initNode.parsed) {
+                const prevTabs = tabs
+                tabs = ""
+                outerOutput += `${parseType(initNode.returnType)} ${node.id.name}${parse[initNode.type](initNode)}\n`
+                tabs = prevTabs
+            }
+            break
+
+        case PrimitiveType.Object:
             const prevTabs = tabs
-            tabs = ""
-            outerOutput += `${getPrimitive(node.init.returnPrimitive)} ${node.id.name}${parse[node.init.type](node.init)}\n`
+            tabs = ""        
+            outerOutput += `struct ${node.id.name} ${parse[initNode.type](initNode)}`
             tabs = prevTabs
-        }
+            break
+
+        default:
+            outerOutput += `const auto ${node.id.name} = ${parse[initNode.type](initNode)};\n\n`
+            break
     }
-    else if(node.primitive === PrimitiveType.Object) {
-        const prevTabs = tabs
-        tabs = ""        
-        outerOutput += `struct ${node.id.name} ${parse[node.init.type](node.init)}`
-        tabs = prevTabs
-    }
-    else {
-        outerOutput += `const ${getType(node.varNode)} ${node.id.name} = ${parse[node.init.type](node.init)};\n\n`
-    }
+
     return null
 }
 
@@ -143,7 +149,9 @@ const parseCallExpression = (node) => {
 }
 
 const parseNewExpression = (node) => {
-    console.log(node)
+    const args = parseArgs(node.arguments)
+    const output = `new ${parse[node.callee.type](node.callee)}(${args})`
+    return output
 }
 
 const parseFunctionExpression = (node) => {
@@ -176,8 +184,11 @@ const parseObjectExpression = (node) => {
 }
 
 const parseClassDeclaration = (node) => {
-    const output = `struct ${node.id.name} ${parse[node.body.type](node.body)}`
-    return output
+    const prevTabs = tabs
+    tabs = ""
+    outerOutput += `struct ${node.id.name} ${parse[node.body.type](node.body)};\n\n`
+    tabs = prevTabs
+    return null
 }
 
 const parseExportDefaultDeclaration = (node) => {
@@ -215,7 +226,7 @@ const parseParams = (params) => {
 }
 
 const parseParam = (param) => {
-    return `${getPrimitive(param.primitive)} ${param.name}`
+    return `${parseType(param.varType)} ${param.name}`
 }
 
 const parseArgs = (args) => {
@@ -234,19 +245,18 @@ const parseArg = (arg) => {
     return parse[arg.type](arg)
 }
 
-const getType = (node) => {
-    if(!node.varType) {
-        return "void"
-    }
-    switch(node.varType.primitive) {
+const parseType = (type) => {
+    switch(type.primitive) {
         case PrimitiveType.Number:
             return "double"
         case PrimitiveType.Boolean:
             return "bool"
         case PrimitiveType.String:
             return "std::string"
+        case PrimitiveType.Unknown:
+            return "void"
     }
-    return node.varType.name
+    return type.name
 }
 
 const createName = (node) => {
