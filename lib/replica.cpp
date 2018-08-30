@@ -25,7 +25,7 @@ struct Array {
     int length;
     
     T &operator[](unsigned int index) {
-        return (index > length) ? nullptr : this->buffer[index];
+        return (index > length) ? 0 : this->buffer[index];
     }       
 };
 
