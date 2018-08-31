@@ -1,6 +1,7 @@
 import PrimitiveType from "../PrimitiveType"
 
 let scope = null
+let insideClass = null
 let tabs = ""
 let outerOutput = ""
 
@@ -20,14 +21,22 @@ const parseBody = (buffer) => {
     if(buffer.length === 0) {
         return ""
     }
+
+    const parseLater = []
+
     let output = ""
     for(let n = 0; n < buffer.length; n++) {
         const node = buffer[n]
+        if(node.type === "ClassDeclaration") {
+            parseLater.push(node)
+            continue
+        }
         let nodeOutput = parse[node.type](node)
         if(nodeOutput) {
             nodeOutput = `${tabs}${nodeOutput}`
             switch(node.type) {
                 case "IfStatement":
+                case "MethodDefinition":
                     output += `${nodeOutput}\n`
                     break
                 default:
@@ -36,6 +45,12 @@ const parseBody = (buffer) => {
             }
         }
     }
+
+    for(let n = 0; n < parseLater.length; n++) {
+        const node = parseLater[n]
+        parse[node.type](node)
+    }
+
     return output
 }
 
@@ -134,8 +149,13 @@ const parseBinaryExpression = (node) => {
 }
 
 const parseMemberExpression = (node) => {
-    const connection = node.property.isStatic ? "::" : "."
-    return parse[node.object.type](node.object) + connection + parse[node.property.type](node.property)
+    if(node.computed) {
+        const output = `${parse[node.object.type](node.object)}[${parse[node.property.type](node.property)}]`
+        return output
+    }
+    const connection = node.property.isStatic ? "::" : "->"
+    const output = parse[node.object.type](node.object) + connection + parse[node.property.type](node.property) 
+    return output
 }
 
 const parseCallExpression = (node) => {
@@ -148,6 +168,10 @@ const parseNewExpression = (node) => {
     const args = parseArgs(node.arguments)
     const output = `new ${parse[node.callee.type](node.callee)}(${args})`
     return output
+}
+
+const parseThisExpression = (node) => {
+    return "this"
 }
 
 const parseFunctionExpression = (node) => {
@@ -182,7 +206,9 @@ const parseObjectExpression = (node) => {
 const parseClassDeclaration = (node) => {
     const prevTabs = tabs
     tabs = ""
+    insideClass = node
     outerOutput += `struct ${node.id.name} ${parse[node.body.type](node.body)};\n\n`
+    insideClass = null
     tabs = prevTabs
     return null
 }
@@ -205,8 +231,15 @@ const parseMethodDefinition = (node) => {
     if(!node.value.parsed) { 
         return null 
     }
-    const output = "here"
+
+    let output
+    switch(node.kind) {
+        case "constructor":
+            output = `${createName(insideClass.id)}${parseFunctionExpression(node.value)}`
+            break
+    }
     console.log(node)
+    return output
 }
 
 const parseParams = (params) => {
@@ -289,6 +322,7 @@ const parse = {
     MemberExpression: parseMemberExpression,
     CallExpression: parseCallExpression,
     NewExpression: parseNewExpression,
+    ThisExpression: parseThisExpression,
     ArrowFunctionExpression: parseArrowFunctionExpression,
     ObjectExpression: parseObjectExpression,
     ClassDeclaration: parseClassDeclaration,
