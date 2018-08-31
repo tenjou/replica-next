@@ -1,5 +1,6 @@
 import Scope from "./Scope"
 import PrimitiveType from "./PrimitiveType"
+import TypeFlag from "./TypeFlag"
 
 let unknownType
 let numberType
@@ -27,13 +28,19 @@ const getVarType = (primitive) => {
     return unknownType
 }
 
-const declareClass = (module, name, members) => {
+const declareClass = (module, name, members, flags = 0) => {
     const moduleScope = module.scope
     const scope = new Scope(moduleScope)
     const node = {
+        id: {
+            name
+        },
         type: "ClassDeclaration",
-        scope
+        scope,
+        flags,
+        isType: true
     }
+    node.varType = node
     moduleScope.vars[name] = node
 
     for(let key in members) {
@@ -42,13 +49,12 @@ const declareClass = (module, name, members) => {
     }
 }
 
-const declareType = (module, type, primitive) => {
+const declareType = (module, type, primitive, flags = 0) => {
     const typeNode = {
-        id: {
-            name: type
-        },
+        name: type,
         primitive,
-        isVarType: true
+        flags,
+        isType: true
     }
     module.scope.vars[type] = typeNode
     return typeNode
@@ -57,12 +63,10 @@ const declareType = (module, type, primitive) => {
 const createFunc = (params, returnType = PrimitiveType.Unknown) => {
     const signatures = createParams(params)
     return {
+        signatures,
+        parsed: true,
         varNode: functionType,
-        init: {
-            signatures,
-            parsed: true,
-            returnType: getVarType(returnType)
-        }
+        returnType: getVarType(returnType)
     }
 }
 
@@ -71,9 +75,9 @@ const createParams = (params) => {
     for(let n = 0; n < params.length; n++) {
         const srcBuffer = params[n]
         const buffer = new Array(srcBuffer.length)
-        for(let m = 0; m < params.length; m++) {
-            buffer[n] = {
-                varNode: srcBuffer[n]
+        for(let m = 0; m < srcBuffer.length; m++) {
+            buffer[m] = {
+                varType: srcBuffer[m]
             }
         }
         signatures.push({
@@ -91,7 +95,7 @@ const declareStd = (module) => {
     stringType = declareType(module, "String", PrimitiveType.String)
     functionType = declareType(module, "Function", PrimitiveType.Function)
     objectType = declareType(module, "Object", PrimitiveType.Object)
-    arrayType = declareType(module, "Array", PrimitiveType.Array)
+    arrayType = declareType(module, "Array", PrimitiveType.Array, TypeFlag.Array)
 
     declareClass(module, "console", {
         log: createFunc([ stringType ])
@@ -115,7 +119,7 @@ const declareStd = (module) => {
             [ numberType ],
             [ arrayType ]
         ])
-    })
+    }, TypeFlag.Array)
 }
 
 export { declareStd }
