@@ -1,9 +1,10 @@
 import Scope from "./Scope"
 import PrimitiveType from "./PrimitiveType"
+import TypeFlag from "./TypeFlag"
 
 let fetchMethod = null
 let rootModule = null
-let rootScope = null
+let topScope = null
 let module = null
 let scope = null
 
@@ -13,7 +14,7 @@ const run = (nextRootModule, nextModule, node) => {
     return parseImports(node.body)
         .then(() => {
             rootModule = nextRootModule
-            rootScope = rootModule.scope
+            topScope = rootModule.scope
             module = nextModule
             scope = module.scope
             parseBody(node.body)
@@ -87,16 +88,16 @@ const parseIdentifier = (node) => {
 const parseLiteral = (node) => {
     switch(typeof node.value) {
         case "number":
-            node.varType = rootScope.vars.Number
+            node.varType = topScope.vars.Number
             break
         case "boolean":
-            node.varType = rootScope.vars.Boolean
+            node.varType = topScope.vars.Boolean
             break
         case "string":
-            node.varType = rootScope.vars.String
+            node.varType = topScope.vars.String
             break
         default:
-            node.varType = rootScope.vars.Unknown
+            node.varType = topScope.vars.Unknown
             break
     }
     return node.varType
@@ -110,19 +111,30 @@ const parseVariableDeclaration = (node) => {
 }
 
 const parseVariableDeclarator = (node) => {
-    parse[node.init.type](node.init)
+    const varType = parse[node.init.type](node.init)
+    node.init = varType
     scope.vars[node.id.name] = node.init
 }
 
 const parseAssignmentExpression = (node) => {
-    const leftType = parse[node.left.type](node.left)
+    const leftVar = getVar(node.left)
+    const leftType = leftVar.varType
     const rightType = parse[node.right.type](node.right)
-    if(leftType === PrimitiveType.Unknown) {
-        node.left.primitive = rightType.primitive
+    if(node.left.computed) {
+        if(rightType.primitive !== PrimitiveType.Number) {
+            throw `UnsupportedType: [] property access only supported for Number type`
+        }
     }
-    else if(leftType !== rightType) {
-        throw `TypeMismatch: Expected type "${PrimitiveTypeKey[rightType]}" but instead got "${PrimitiveTypeKey[leftType]}"`
-    }    
+    else {
+        if(leftType.primitive === PrimitiveType.Unknown) {
+            leftVar.varType = rightType
+            return rightType
+        }
+        else if(leftType !== rightType) {
+            throw `TypeMismatch: Expected type "${PrimitiveTypeKey[rightType]}" but instead got "${PrimitiveTypeKey[leftType]}"`
+        }          
+    }
+    return leftType
 }
 
 const parseUnaryExpression = (node) => {
@@ -162,26 +174,25 @@ const parseMemberExpression = (node) => {
         const parentScope = scope.parent
         varNode = parentScope.vars[node.property.name]
         if(!varNode) {
-            node.property.varNode = null
-            node.property.varType = rootScope.vars.Unknown
-            parentScope.vars[node.property.name] = node.property
+            varNode = node.property
+            varNode.varType = topScope.vars.Unknown
+            parentScope.vars[node.property.name] = varNode
         }
     }
     else {
-        parse[node.object.type](node.object)
-        const objNode = node.object.varNode
+        const objNode = parse[node.object.type](node.object)
         varNode = objNode.scope.vars[node.property.name]
         if(!varNode) {
             const name = createName(node)
             throw `ReferenceError: ${name} is not defined`
         }        
     }
-    return varNode
+    return varNode.varType
 }
 
 const parseFunctionExpression = (node) => {
     const prevScope = scope
-    node.varType = rootScope.vars.Function
+    node.varType = topScope.vars.Function
     node.scope = new Scope(scope)
     scope = node.scope
 
@@ -217,7 +228,7 @@ const parseAssignmentPattern = (node) => {
 
 const parseNewExpression = (node) => {
     const varNode = parse[node.callee.type](node.callee)
-    if(!varNode.isVarType && varNode.primitive !== PrimitiveType.Class) {
+    if(!varNode.isType && varNode.primitive !== PrimitiveType.Class) {
         throw `InvalidType: ${node.varNode.id.name} is not typeof Class`
     }
     const constructorFunc = varNode.scope.vars.constructor
@@ -228,14 +239,14 @@ const parseNewExpression = (node) => {
     else if(node.arguments.length > 0) {
         throw `ArgumentCountMismatch: Expected to have${constructorFunc.params.length} arguments but instead got: 0`
     }
-    node.varNode = varNode
     return varNode
 }
 
 const parseClassDeclaration = (node) => {
-    node.isVarType = true
+    node.isType = true
     node.primitive = PrimitiveType.Class
-    node.scope = scope.createScope()
+    node.varType = node
+    node.scope = scope.createScope(true)
     scope.vars[node.id.name] = node
 
     const prevScope = scope
@@ -253,7 +264,7 @@ const parseExportNamedDeclaration = (node) => {
 }
 
 const parseMethodDefinition = (node) => {
-    node.varType = rootScope.vars.Function
+    node.varType = topScope.vars.Function
     node.value.scope = scope.createScope()
     node.value.parsed = false
     node.value.signatures = parseParams(node.value.params)
@@ -265,7 +276,7 @@ const parseParams = (params) => {
     for(let n = 0; n < params.length; n++) {
         const param = params[n]
         param.varNode = null
-        param.varType = rootScope.vars.Unknown
+        param.varType = topScope.vars.Unknown
 
         if(param.type !== "AssignmentPattern") {
             scope.vars[param.name] = param            
@@ -273,7 +284,7 @@ const parseParams = (params) => {
         }
         else {
             param.varNode = null
-            param.varType = rootScope.vars.Unknown
+            param.varType = topScope.vars.Unknown
             scope.vars[param.left.name] = param
         }
     }
@@ -303,7 +314,7 @@ const parseArg = (param, arg) => {
     if(param.varType.primitive === PrimitiveType.Unknown) {
         param.varType = argType
     }
-    else if(param.varType.primitive !== argType) {
+    else if(param.varType !== argType) {
         throw `TypeMismatch: Expected type "${PrimitiveTypeKey[param.primitive]}" but instead got "${PrimitiveTypeKey[argType]}"`
     }
 }
@@ -329,7 +340,7 @@ const parseFunctionBody = (node) => {
     parse[node.body.type](node.body)
     
     const returns = scope.returns
-    let returnType = rootScope.vars.Unknown
+    let returnType = topScope.vars.Unknown
     for(let n = 0; n < returns.length; n++) {
         const itemType = returns[n].varType
         if(returnType.primitive === PrimitiveType.Unknown) {
@@ -343,6 +354,37 @@ const parseFunctionBody = (node) => {
     scope = prevScope 
 }
 
+const getVar = (node, varScope = null) => {
+    switch(node.type) {
+        case "MemberExpression":
+            if(node.object.type === "ThisExpression") {
+                const rootScope = scope.getRoot()
+                let varNode = getVar(node.property, rootScope)
+                if(!varNode) {
+                    varNode = node.property
+                    varNode.varType = topScope.vars.Unknown
+                    rootScope.vars[varNode.name] = varNode
+                }
+                return varNode
+            }
+            else {
+                const leftNode = getVar(node.object)
+                if(node.computed) {
+                    if(leftNode.varType.flags & TypeFlag.Array) {
+                        return leftNode
+                    }
+                    else {
+                        throw `NoArrayAccess: "${createName(node)}" does not have an array property access"`
+                    }
+                }
+            }
+            break
+        case "Identifier":
+            return varScope.vars[node.name]
+    }
+    return null
+}
+
 const createName = (node) => {
     switch(node.type) {
         case "Identifier":
@@ -350,7 +392,13 @@ const createName = (node) => {
         case "VariableDeclarator":
             return createName(node.id)
         case "MemberExpression":
-            return `${node.object.name}.${node.property.name}`            
+            const objectName = createName(node.object)
+            if(node.computed) {
+                return objectName
+            }
+            return `${objectName}.${createName(node.property)}`   
+        case "ThisExpression":
+            return "this"     
     }
     throw "NotImplemented"
 }
