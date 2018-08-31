@@ -6,6 +6,13 @@ class Scope {
         this.funcs = []
         this.classes = {}
         this.returns = []
+        this.root = false
+    }
+
+    createScope(root = false) {
+        const scope = new Scope(this)
+        scope.root = root
+        return scope
     }
 
     getVar(name) {
@@ -20,8 +27,15 @@ class Scope {
         return null
     }
 
-    createScope() {
-        return new Scope(this)
+    getRoot() {
+        let scope = this
+        while(scope) {
+            if(scope.root) {
+                return scope
+            }
+            scope = scope.parent
+        }  
+        return null
     }
 }
 
