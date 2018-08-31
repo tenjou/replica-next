@@ -112,7 +112,7 @@ const parseVariableDeclaration = (node) => {
 
 const parseVariableDeclarator = (node) => {
     const varType = parse[node.init.type](node.init)
-    node.init = varType
+    node.init.varType = varType
     scope.vars[node.id.name] = node.init
 }
 
