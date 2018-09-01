@@ -6,6 +6,7 @@ class Matrix4 {
 		this.m[5] = 1.0
 		this.m[10] = 1.0
 		this.m[15] = 1.0
+		this.identity()
 	}
 
 	copy(src) {

@@ -155,7 +155,7 @@ const parseBinaryExpression = (node) => {
 }
 
 const parseCallExpression = (node) => {
-    const funcNode = scope.getVar(node.callee.name)
+    const funcNode = getVar(node.callee)
     if(!funcNode) {
         const name = createName(node.callee)
         throw `ReferenceError: ${name} is not defined`
@@ -264,7 +264,7 @@ const parseExportNamedDeclaration = (node) => {
 }
 
 const parseMethodDefinition = (node) => {
-    node.varType = topScope.vars.Function
+    node.value.varType = topScope.vars.Function
     node.value.scope = scope.createScope()
     node.value.parsed = false
     node.value.signatures = parseParams(node.value.params)

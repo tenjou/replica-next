@@ -153,6 +153,11 @@ const parseMemberExpression = (node) => {
         const output = `${parse[node.object.type](node.object)}[${parse[node.property.type](node.property)}]`
         return output
     }
+    // if(node.object.type === "ThisExpression") {
+    //     return "xxx->"
+    //     // const output2 = parse[node.object.type](node.object) + "->" + parse[node.property.type](node.property) 
+    //     // return output2
+    // }
     const connection = node.property.isStatic ? "::" : "->"
     const output = parse[node.object.type](node.object) + connection + parse[node.property.type](node.property) 
     return output
@@ -160,7 +165,7 @@ const parseMemberExpression = (node) => {
 
 const parseCallExpression = (node) => {
     const params = parseArgs(node.arguments)
-    const output = createName(node.callee) + `(${params})`
+    const output = parse[node.callee.type](node.callee) + `(${params})`
     return output
 }
 
@@ -236,6 +241,9 @@ const parseMethodDefinition = (node) => {
     switch(node.kind) {
         case "constructor":
             output = `${createName(insideClass.id)}${parseFunctionExpression(node.value)}`
+            break
+        default:
+            output = `${node.key.name}${parseFunctionExpression(node.value)}`
             break
     }
     console.log(node)
