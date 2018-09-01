@@ -56,7 +56,8 @@ const parseBody = (buffer) => {
 
 const parseClassBody = (node) => {
     incTabs()
-    let output = `{\n${parseBody(node.body)}`
+    const bodyOutput = parseBody(node.body)
+    let output = `{\n${bodyOutput}`
     decTabs()
     output += tabs + "}"
     return output  
@@ -242,7 +243,7 @@ const parseMethodDefinition = (node) => {
             output = `${createName(insideClass.id)}${parseFunctionExpression(node.value)}`
             break
         default:
-            output = `${node.key.name}${parseFunctionExpression(node.value)}`
+            output = `${parseType(node.value.returnType)} ${node.key.name}${parseFunctionExpression(node.value)}`
             break
     }
     return output
