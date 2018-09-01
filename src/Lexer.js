@@ -280,7 +280,12 @@ const parseMethodDefinition = (node) => {
     node.value.varType = topScope.vars.Function
     node.value.scope = scope.createScope()
     node.value.parsed = false
+
+    const prevScope = scope
+    scope = node.value.scope
     node.value.signatures = parseParams(node.value.params)
+    scope = prevScope
+
     scope.vars[node.key.name] = node.value
 }
 

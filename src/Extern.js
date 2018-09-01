@@ -38,6 +38,7 @@ const declareClass = (module, name, members, flags = 0) => {
         type: "ClassDeclaration",
         scope,
         flags,
+        primitive: PrimitiveType.Class,
         isType: true
     }
     node.varType = node

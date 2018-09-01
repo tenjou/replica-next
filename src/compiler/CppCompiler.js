@@ -56,8 +56,9 @@ const parseBody = (buffer) => {
 
 const parseClassBody = (node) => {
     incTabs()
+    const varsOutput = parseVars(scope.vars)
     const bodyOutput = parseBody(node.body)
-    let output = `{\n${bodyOutput}`
+    let output = `{\n${varsOutput}\n${bodyOutput}`
     decTabs()
     output += tabs + "}"
     return output  
@@ -213,12 +214,15 @@ const parseObjectExpression = (node) => {
 }
 
 const parseClassDeclaration = (node) => {
+    const prevScope = scope
     const prevTabs = tabs
+    scope = node.scope
     tabs = ""
     insideClass = node
     outerOutput += `struct ${node.id.name} ${parse[node.body.type](node.body)};\n\n`
     insideClass = null
     tabs = prevTabs
+    scope = prevScope
     return null
 }
 
@@ -289,10 +293,30 @@ const parseType = (type) => {
             return "bool"
         case PrimitiveType.String:
             return "std::string"
+        case PrimitiveType.Class:
+            return type.id.name
         case PrimitiveType.Unknown:
             return "void"
     }
     return type.name
+}
+
+const parseVars = (vars) => {
+    let output = ""
+    for(let key in vars) {
+        const node = vars[key]
+        switch(node.varType.primitive) {
+            case PrimitiveType.Function:
+                break
+            case PrimitiveType.Class:
+                output += `${tabs}${parseType(node.varType)} *${key} = nullptr;\n`
+                break
+            default:
+                output += `${tabs}${parseType(node.varType)} ${key} = 0;\n`
+                break
+        }
+    }
+    return output
 }
 
 const createName = (node) => {
