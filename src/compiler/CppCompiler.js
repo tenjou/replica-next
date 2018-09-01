@@ -129,9 +129,12 @@ const parseVariableDeclarator = (node) => {
             outerOutput += `struct ${node.id.name} ${parse[initNode.type](initNode)}`
             tabs = prevTabs
             break
+
+        default:
+            return `auto ${node.id.name} = ${parse[initNode.type](initNode)}`
     }
 
-    return `auto ${node.id.name} = ${parse[initNode.type](initNode)}`
+    return null
 }
 
 const parseAssignmentExpression = (node) => {

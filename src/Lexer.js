@@ -78,7 +78,7 @@ const parseArrayExpression = (node) => {
 }
 
 const parseIdentifier = (node) => {
-    const varNode = scope.getVar(node.name)
+    const varNode = scope.getVar(node.name, scope)
     if(!varNode) {
         throw `ReferenceError: ${node.name} is not defined`
     }
@@ -117,7 +117,7 @@ const parseVariableDeclarator = (node) => {
 }
 
 const parseAssignmentExpression = (node) => {
-    const leftVar = getVar(node.left)
+    const leftVar = getVar(node.left, scope)
     const leftType = leftVar.varType
     const rightType = parse[node.right.type](node.right)
     if(node.left.computed) {
@@ -155,7 +155,7 @@ const parseBinaryExpression = (node) => {
 }
 
 const parseCallExpression = (node) => {
-    const funcNode = getVar(node.callee)
+    const funcNode = getVar(node.callee, scope)
     if(!funcNode) {
         const name = createName(node.callee)
         throw `ReferenceError: ${name} is not defined`
@@ -200,7 +200,7 @@ const parseFunctionExpression = (node) => {
     node.parsed = false
     
     scope = prevScope
-    return node.varNode
+    return node.varType
 }
 
 const parseArrowFunctionExpression = (node) => {
@@ -354,11 +354,11 @@ const parseFunctionBody = (node) => {
     scope = prevScope 
 }
 
-const getVar = (node, varScope = null) => {
+const getVar = (node, varScope) => {
     switch(node.type) {
         case "MemberExpression":
             if(node.object.type === "ThisExpression") {
-                const rootScope = scope.getRoot()
+                const rootScope = varScope.getRoot()
                 let varNode = getVar(node.property, rootScope)
                 if(!varNode) {
                     varNode = node.property
@@ -368,7 +368,7 @@ const getVar = (node, varScope = null) => {
                 return varNode
             }
             else {
-                const leftNode = getVar(node.object)
+                const leftNode = getVar(node.object, varScope)
                 if(node.computed) {
                     if(leftNode.varType.flags & TypeFlag.Array) {
                         return leftNode
