@@ -8,34 +8,46 @@ let topScope = null
 let module = null
 let scope = null
 
-const run = (nextRootModule, nextModule, node) => {
-    rootModule = nextRootModule
-    module = nextModule    
-    return parseImports(node.body)
+const run = (rootModule_, module_, node) => {
+    rootModule = rootModule_
+    module = module_
+    return parseImports(node.body, module_.scope)
         .then(() => {
-            rootModule = nextRootModule
-            topScope = rootModule.scope
-            module = nextModule
+            rootModule = rootModule_
+            topScope = rootModule_.scope
+            module = module_
             scope = module.scope
             parseBody(node.body)
         })
 }
 
-const parseImports = (nodes) => {
+const parseImports = (nodes, scope) => {
     const promises = []
     for(let n = 0; n < nodes.length; n++) {
         const node = nodes[n]
         if(node.type !== "ImportDeclaration") { break }
-        promises.push(parseImportDeclaration(node))
+        promises.push(parseImportDeclaration(node, scope))
     }
     return Promise.all(promises)
 }
 
-const parseImportDeclaration = (node) => {
-    return fetchMethod(module, node.source.value)
+const parseImportDeclaration = (node, scope) => {
+    return fetchMethod(rootModule, module, node.source.value)
         .then((module) => {
             node.module = module 
+            const specifiers = node.specifiers
+            for(let n = 0; n < specifiers.length; n++) {
+                parseImportDefaultSpecifier(specifiers[n], scope)
+            }
         })
+}
+
+const parseImportDefaultSpecifier = (node, requestScope) => {
+    const name = node.local.name
+    if(!scope.vars[name]) {
+        throw `ReferenceError: ${node.name} is not defined inside imported module`
+    }
+    requestScope.vars[name] = scope.vars[name]
 }
 
 const parseBody = (nodes) => {
@@ -78,7 +90,7 @@ const parseArrayExpression = (node) => {
 }
 
 const parseIdentifier = (node) => {
-    const varNode = scope.getVar(node.name, scope)
+    const varNode = getVar(node, scope)
     if(!varNode) {
         throw `ReferenceError: ${node.name} is not defined`
     }
@@ -256,7 +268,8 @@ const parseClassDeclaration = (node) => {
 }
 
 const parseExportDefaultDeclaration = (node) => {
-    console.log(node)
+    const varNode = getVar(node.declaration, scope)
+    scope.exported[node.declaration.name] = varNode
 }
 
 const parseExportNamedDeclaration = (node) => {
@@ -379,8 +392,17 @@ const getVar = (node, varScope) => {
                 }
             }
             break
+
         case "Identifier":
-            return varScope.vars[node.name]
+            const name = node.name
+            let scope = varScope
+            while(scope) {
+                const node = scope.vars[name]
+                if(node) {
+                    return node
+                }
+                scope = scope.parent
+            }
     }
     return null
 }

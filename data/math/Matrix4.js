@@ -1,17 +1,12 @@
-import { EPSILON } from "./Common"
 
 class Matrix4 {
-	constructor(matrix) {
-		if(matrix) {
-			this.m = new Float32Array(matrix)
-		}
-		else {
-			this.m = new Float32Array(16)
-			this.m[0] = 1.0
-			this.m[5] = 1.0
-			this.m[10] = 1.0
-			this.m[15] = 1.0
-		}
+	constructor() {
+		this.m = new Float32Array(16)
+		this.m[0] = 1.0
+		this.m[5] = 1.0
+		this.m[10] = 1.0
+		this.m[15] = 1.0
+		this.identity()
 	}
 
 	copy(src) {

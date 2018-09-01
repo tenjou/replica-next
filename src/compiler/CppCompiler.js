@@ -221,13 +221,9 @@ const parseClassDeclaration = (node) => {
     return null
 }
 
-const parseExportDefaultDeclaration = (node) => {
-    console.log(node)
-}
+const parseExportDefaultDeclaration = (node) => {}
 
-const parseExportNamedDeclaration = (node) => {
-    console.log(node)
-}
+const parseExportNamedDeclaration = (node) => {}
 
 const parseImportDeclaration = (node) => {
     if(node.module.ext === "js") {
@@ -249,7 +245,6 @@ const parseMethodDefinition = (node) => {
             output = `${node.key.name}${parseFunctionExpression(node.value)}`
             break
     }
-    console.log(node)
     return output
 }
 

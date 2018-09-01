@@ -97,6 +97,12 @@ const declareStd = (module) => {
     objectType = declareType(module, "Object", PrimitiveType.Object)
     arrayType = declareType(module, "Array", PrimitiveType.Array, TypeFlag.Array)
 
+    declareClass(module, "document", {
+        createElement: createFunc([ stringType ]),
+    })
+
+    // declareClass(module, )
+
     declareClass(module, "console", {
         log: createFunc([ stringType ])
     })

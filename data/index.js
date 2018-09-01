@@ -9,8 +9,7 @@ let positions = null
 let matrixProjection = new Matrix4()
 let matrixModelView = new Matrix4()
 
-const create = () => 
-{
+const create = () => {
 	canvas = document.createElement("canvas")
 	gl = canvas.getContext("webgl")
 	if(!gl) {
@@ -37,8 +36,7 @@ const setupWebGL = () => {
 	gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight)
 }
 
-const initShaderProgram = (vsSource, fsSource) => 
-{
+const initShaderProgram = (vsSource, fsSource) => {
 	const vertexShader = loadShader(gl.VERTEX_SHADER, vsSource)
 	const fragmentShader = loadShader(gl.FRAGMENT_SHADER, fsSource)
 
@@ -59,8 +57,7 @@ const initShaderProgram = (vsSource, fsSource) =>
 	}	
 }
 
-const loadShader = (type, source) => 
-{
+const loadShader = (type, source) => {
 	const shader = gl.createShader(type)
 	gl.shaderSource(shader, source)
 	gl.compileShader(shader)

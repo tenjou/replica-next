@@ -6,6 +6,7 @@ class Scope {
         this.funcs = []
         this.classes = {}
         this.returns = []
+        this.exported = {}
         this.root = false
     }
 
@@ -13,18 +14,6 @@ class Scope {
         const scope = new Scope(this)
         scope.root = root
         return scope
-    }
-
-    getVar(name) {
-        let scope = this
-        while(scope) {
-            const node = scope.vars[name]
-            if(node) {
-                return node
-            }
-            scope = scope.parent
-        }
-        return null
     }
 
     getRoot() {
