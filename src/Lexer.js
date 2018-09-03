@@ -199,6 +199,9 @@ const parseMemberExpression = (node) => {
     }
     else {
         const objNode = parse[node.object.type](node.object)
+        if(node.computed) {
+            return objNode.arrayType
+        }
         varNode = objNode.scope.vars[node.property.name]
         if(!varNode) {
             const name = createName(node)
