@@ -103,6 +103,10 @@ const declareStd = (module) => {
 		])
 	}, TypeFlag.Array)
 
+	const webglShader = declareClass(module, "WebGLShader", {})
+	
+	const webglRenderingContext = declareClass(module, "WebGLRenderingContext", {})
+
 	const webglContext = declareClass(module, "WebGLRenderingContext", {
 		clear: createFunc([[ numberType ]]),
 		clearColor: createFunc([[ numberType, numberType, numberType, numberType ]]),
@@ -116,6 +120,14 @@ const declareStd = (module) => {
 		vertexAttribPointer: createFunc([[ numberType, numberType, numberType, booleanType, numberType, numberType ]]),
 		enableVertexAttribArray: createFunc([[ numberType ]]),
 		drawArrays: createFunc([[ numberType, numberType, numberType ]]),
+		createShader: createFunc([[ numberType ]], webglShader),
+		shaderSource: createFunc([[ webglShader, stringType ]], webglShader),
+		compileShader: createFunc([[ webglShader ]]),
+		deleteShader: createFunc([[ webglShader ]]),
+		createProgram: createFunc([[]], webglRenderingContext),
+		attachShader: createFunc([[ webglRenderingContext, webglShader ]]),
+		linkProgram: createFunc([[ webglRenderingContext ]]),
+		getShaderParameter: createFunc([[ webglShader, numberType ]]),
 		FLOAT: createVar(numberType),
 		DEPTH_TEST: createVar(numberType),
 		LEQUAL: createVar(numberType),
@@ -123,6 +135,9 @@ const declareStd = (module) => {
 		DEPTH_BUFFER_BIT: createVar(numberType),
 		ARRAY_BUFFER: createVar(numberType),
 		TRIANGLE_STRIP: createVar(numberType),
+		VERTEX_SHADER: createVar(numberType),
+		FRAGMENT_SHADER: createVar(numberType),
+		COMPILE_STATUS: createVar(numberType),
 	})
 
 	const htmlCanvas = declareClass(module, "HTMLCanvasElement", {
