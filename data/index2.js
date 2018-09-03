@@ -1,4 +1,6 @@
 import Matrix4 from "./math/Matrix4"
+import basicVS from "./shaders/sprite.vertex.glsl"
+import basicFS from "./shaders/sprite.fragment.glsl"
 
 let matrixProjection = new Matrix4()
 let matrixModelView = new Matrix4()

@@ -33,21 +33,30 @@ const parseImports = (nodes, scope) => {
 
 const parseImportDeclaration = (node, scope) => {
     return fetchMethod(rootModule, module, node.source.value)
-        .then((module) => {
-            node.module = module 
+        .then((importModule) => {
+            node.module = importModule 
             const specifiers = node.specifiers
             for(let n = 0; n < specifiers.length; n++) {
-                parseImportDefaultSpecifier(specifiers[n], scope)
+                parseImportDefaultSpecifier(specifiers[n], scope, importModule)
             }
         })
 }
 
-const parseImportDefaultSpecifier = (node, requestScope) => {
+const parseImportDefaultSpecifier = (node, requestScope, importModule) => {
     const name = node.local.name
-    if(!scope.vars[name]) {
-        throw `ReferenceError: ${node.name} is not defined inside imported module`
+    if(importModule.ext === "glsl") {
+        requestScope.vars[name] = {
+            type: "Literal",
+            raw: `"${importModule.data}"`,
+            varType: rootModule.scope.vars.String
+        }
     }
-    requestScope.vars[name] = scope.vars[name]
+    else {
+        if(!scope.vars[name]) {
+            throw `ReferenceError: ${node.name} is not defined inside imported module`
+        }
+        requestScope.vars[name] = scope.vars[name]
+    }
 }
 
 const parseBody = (nodes) => {

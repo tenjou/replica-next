@@ -246,6 +246,9 @@ const parseImportDeclaration = (node) => {
     if(node.module.ext === "js") {
         parseBody(node.module.data.body)
     }
+    else {
+        parseContent(node.specifiers[0], node.module.data)
+    }
 }
 
 const parseMethodDefinition = (node) => {
@@ -306,7 +309,7 @@ const parseType = (type) => {
         case PrimitiveType.String:
             return "std::string "
         case PrimitiveType.Class:
-            return `${type.id.name} *`
+            return `${type.id.name}* `
         case PrimitiveType.Unknown:
             return "void "
     }
@@ -339,6 +342,10 @@ const parseDefaultValue = (type) => {
             return false
     }
     return "nullptr"
+}
+
+const parseContent = (specifier, content) => {
+    outerOutput += `std::string ${specifier.local.name} = R"(${content})";\n\n`
 }
 
 const createName = (node) => {
