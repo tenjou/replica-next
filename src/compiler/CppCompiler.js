@@ -198,16 +198,18 @@ const parseThisExpression = (node) => {
 
 const parseFunctionExpression = (node) => {
     const paramsOutput = parseParams(node.params)
+    const prevScope = scope
+    scope = node.scope
+
     let output = `(${paramsOutput}) `
     output += parse[node.body.type](node.body) + "\n"
+    
+    scope = prevScope
     return output
 }
 
 const parseArrowFunctionExpression = (node) => {
-    const paramsOutput = parseParams(node.params)
-    let output = `(${paramsOutput}) `
-    output += parse[node.body.type](node.body) + "\n"
-    return output
+    return parseFunctionExpression(node)
 }
 
 const parseObjectExpression = (node) => {
