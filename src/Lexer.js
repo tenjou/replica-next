@@ -178,6 +178,8 @@ const parseCallExpression = (node) => {
     }
     parseArgs(funcNode.signatures, node.arguments)
     parseFunctionBody(funcNode)
+    
+    return funcNode.returnType
 }
 
 const parseMemberExpression = (node) => {
@@ -394,6 +396,10 @@ const getVar = (node, varScope) => {
                     else {
                         throw `NoArrayAccess: "${createName(node)}" does not have an array property access"`
                     }
+                }
+                else {
+                    const varNode = getVar(node.property, leftNode.scope)
+                    return varNode
                 }
             }
             break

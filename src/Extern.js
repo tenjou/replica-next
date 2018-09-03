@@ -10,24 +10,6 @@ let functionType
 let objectType
 let arrayType
 
-const getVarType = (primitive) => {
-    switch(primitive) {
-        case PrimitiveType.Number:
-            return numberType
-        case PrimitiveType.Boolean:
-            return booleanType
-        case PrimitiveType.String:
-            return stringType
-        case PrimitiveType.Function:
-            return functionType
-        case PrimitiveType.Object:
-            return objectType
-        case PrimitiveType.Array:
-            return arrayType                                                            
-    }
-    return unknownType
-}
-
 const declareClass = (module, name, members, flags = 0) => {
     const moduleScope = module.scope
     const scope = new Scope(moduleScope)
@@ -48,6 +30,7 @@ const declareClass = (module, name, members, flags = 0) => {
         const member = members[key]
         scope.vars[key] = member
     }
+    return node
 }
 
 const declareType = (module, type, primitive, flags = 0) => {
@@ -61,13 +44,13 @@ const declareType = (module, type, primitive, flags = 0) => {
     return typeNode
 }
 
-const createFunc = (params, returnType = PrimitiveType.Unknown) => {
+const createFunc = (params, returnType = unknownType) => {
     const signatures = createParams(params)
     return {
         signatures,
         parsed: true,
-        varNode: functionType,
-        returnType: getVarType(returnType)
+        varType: functionType,
+        returnType
     }
 }
 
@@ -98,26 +81,28 @@ const declareStd = (module) => {
     objectType = declareType(module, "Object", PrimitiveType.Object)
     arrayType = declareType(module, "Array", PrimitiveType.Array, TypeFlag.Array)
 
-    declareClass(module, "document", {
-        createElement: createFunc([ stringType ]),
+    const htmlCanvas = declareClass(module, "HTMLCanvasElement", {
+
     })
 
-    // declareClass(module, )
+    declareClass(module, "document", {
+        createElement: createFunc([[ stringType ]], htmlCanvas),
+    })
 
     declareClass(module, "console", {
-        log: createFunc([ stringType ])
+        log: createFunc([[ stringType ]])
     })
 
     declareClass(module, "Math", {
         PI: {
             type: "Literal",
-            varNode: numberType,
+            varType: numberType,
             value: 3.141592653589793,
             isStatic: true
         },
-        sqrt: createFunc([ numberType ], numberType),
-        min: createFunc([ numberType, numberType ], numberType),
-        max: createFunc([ numberType, numberType ], numberType)
+        sqrt: createFunc([[ numberType ]], numberType),
+        min: createFunc([[ numberType, numberType ]], numberType),
+        max: createFunc([[ numberType, numberType ]], numberType)
     })
 
     declareClass(module, "Float32Array", {

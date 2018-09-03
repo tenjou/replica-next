@@ -1,4 +1,11 @@
 import Matrix4 from "./math/Matrix4"
 
-let matrixProjection = new Matrix4()
-let matrixModelView = new Matrix4()
+// let matrixProjection = new Matrix4()
+// let matrixModelView = new Matrix4()
+let canvas = null
+
+const create = () => {
+	canvas = document.createElement("canvas")
+}
+
+create()

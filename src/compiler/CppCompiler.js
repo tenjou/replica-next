@@ -1,12 +1,16 @@
 import PrimitiveType from "../PrimitiveType"
 
 let scope = null
+let rootScope = null
 let insideClass = null
 let tabs = ""
 let outerOutput = ""
+let globalVars = ""
 
-const run = (module) => {
+const run = (module, rootScope_) => {
     scope = module.scope
+    rootScope = rootScope_
+
     const includes = `#include "replica.cpp"\n\n`
     let output = "int main() {\n"
     incTabs()
@@ -14,7 +18,13 @@ const run = (module) => {
     output += `\n${tabs}return 0;\n`
     decTabs()
     output += "}\n"
-    return includes + outerOutput + output
+
+    let result = includes + outerOutput
+    if(globalVars) {
+        result += globalVars + "\n"
+    }
+    result += output
+    return result
 }
 
 const parseBody = (buffer) => {
@@ -98,7 +108,7 @@ const parseIdentifier = (node) => {
 }
 
 const parseLiteral = (node) => {
-    return node.raw
+    return (node.value === null) ? "nullptr" : node.raw
 }
 
 const parseVariableDeclaration = (node) => {
@@ -120,7 +130,7 @@ const parseVariableDeclarator = (node) => {
             if(initNode.parsed) {
                 const prevTabs = tabs
                 tabs = ""
-                outerOutput += `${parseType(initNode.returnType)} ${node.id.name}${parse[initNode.type](initNode)}\n`
+                outerOutput += parseType(initNode.returnType) + node.id.name + parse[initNode.type](initNode) + "\n"
                 tabs = prevTabs
             }
             break
@@ -133,6 +143,10 @@ const parseVariableDeclarator = (node) => {
             break
 
         default:
+            if(scope.parent === rootScope) {
+                globalVars += parseType(initNode.varType) + node.id.name + ` = ${parse[initNode.type](initNode)};\n`
+                return null
+            }
             return `auto ${node.id.name} = ${parse[initNode.type](initNode)}`
     }
 
@@ -158,11 +172,6 @@ const parseMemberExpression = (node) => {
         const output = `${parse[node.object.type](node.object)}[${parse[node.property.type](node.property)}]`
         return output
     }
-    // if(node.object.type === "ThisExpression") {
-    //     return "xxx->"
-    //     // const output2 = parse[node.object.type](node.object) + "->" + parse[node.property.type](node.property) 
-    //     // return output2
-    // }
     const connection = node.property.isStatic ? "::" : "->"
     const output = parse[node.object.type](node.object) + connection + parse[node.property.type](node.property) 
     return output
@@ -244,10 +253,10 @@ const parseMethodDefinition = (node) => {
     let output
     switch(node.kind) {
         case "constructor":
-            output = `${createName(insideClass.id)}${parseFunctionExpression(node.value)}`
+            output = createName(insideClass.id) + parseFunctionExpression(node.value)
             break
         default:
-            output = `${parseType(node.value.returnType)} ${node.key.name}${parseFunctionExpression(node.value)}`
+            output = parseType(node.value.returnType) + node.key.name + parseFunctionExpression(node.value)
             break
     }
     return output
@@ -266,7 +275,7 @@ const parseParams = (params) => {
 }
 
 const parseParam = (param) => {
-    return `${parseType(param.varType)} ${param.name}`
+    return parseType(param.varType) + param.name
 }
 
 const parseArgs = (args) => {
@@ -288,17 +297,17 @@ const parseArg = (arg) => {
 const parseType = (type) => {
     switch(type.primitive) {
         case PrimitiveType.Number:
-            return "double"
+            return "double "
         case PrimitiveType.Boolean:
-            return "bool"
+            return "bool "
         case PrimitiveType.String:
-            return "std::string"
+            return "std::string "
         case PrimitiveType.Class:
-            return type.id.name
+            return `${type.id.name} *`
         case PrimitiveType.Unknown:
-            return "void"
+            return "void "
     }
-    return type.name
+    return `${type.name} `
 }
 
 const parseVars = (vars) => {
@@ -309,14 +318,24 @@ const parseVars = (vars) => {
             case PrimitiveType.Function:
                 break
             case PrimitiveType.Class:
-                output += `${tabs}${parseType(node.varType)} *${key} = nullptr;\n`
+                output += tabs + parseType(node.varType) + key + " = nullptr;\n"
                 break
             default:
-                output += `${tabs}${parseType(node.varType)} ${key} = 0;\n`
+                output += tabs + parseType(node.varType) + key + "= ${parseDefaultValue(node.varType)};\n"
                 break
         }
     }
     return output
+}
+
+const parseDefaultValue = (type) => {
+    switch(type.primitive) {
+        case PrimitiveType.Number:
+            return "0"
+        case PrimitiveType.Boolean:
+            return false
+    }
+    return "nullptr"
 }
 
 const createName = (node) => {

@@ -81,7 +81,7 @@ export default function main() {
 	Lexer.setFetchMethod(fetchMethod)
 	fetchMethod(rootModule, rootModule, "data/index2.js")
 	.then((module) => {
-		const output = CppCompiler.run(module)
+		const output = CppCompiler.run(module, rootModule.scope)
 		console.log(output)
 	})
 }
