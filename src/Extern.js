@@ -81,8 +81,12 @@ const declareStd = (module) => {
     objectType = declareType(module, "Object", PrimitiveType.Object)
     arrayType = declareType(module, "Array", PrimitiveType.Array, TypeFlag.Array)
 
-    const htmlCanvas = declareClass(module, "HTMLCanvasElement", {
+    const webglContext = declareClass(module, "WebGLRenderingContext", {
 
+    })
+
+    const htmlCanvas = declareClass(module, "HTMLCanvasElement", {
+        getContext: createFunc([[ stringType ]], webglContext)
     })
 
     declareClass(module, "document", {
@@ -90,7 +94,8 @@ const declareStd = (module) => {
     })
 
     declareClass(module, "console", {
-        log: createFunc([[ stringType ]])
+        log: createFunc([[ stringType ]]),
+        error: createFunc([[ stringType ]])
     })
 
     declareClass(module, "Math", {
