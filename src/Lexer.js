@@ -66,7 +66,12 @@ const parseBlockStatement = (node) => {
 }
 
 const parseReturnStatement = (node) => {
-    node.varType = parse[node.argument.type](node.argument)
+    if(node.argument) {
+        node.varType = parse[node.argument.type](node.argument)
+    }
+    else {
+        node.varType = topScope.vars.Unknown
+    }
     scope.returns.push(node)
 }
 
@@ -398,7 +403,7 @@ const getVar = (node, varScope) => {
                     }
                 }
                 else {
-                    const varNode = getVar(node.property, leftNode.scope)
+                    const varNode = getVar(node.property, leftNode.varType.scope)
                     return varNode
                 }
             }

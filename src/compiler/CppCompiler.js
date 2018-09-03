@@ -83,7 +83,10 @@ const parseBlockStatement = (node) => {
 }
 
 const parseReturnStatement = (node) => {
-    return `return ${parse[node.argument.type](node.argument)}`
+    if(node.argument) {
+        return `return ${parse[node.argument.type](node.argument)}`
+    }
+    return "return"
 }
 
 const parseExpressionStatement = (node) => {
