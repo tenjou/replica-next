@@ -23,6 +23,9 @@ const declareClass = (module, name, members, flags = 0) => {
 		primitive: PrimitiveType.Class,
 		isType: true
 	}
+	if(flags & TypeFlag.Array) {
+		node.arrayType = numberType
+	}	
 	node.varType = node
 	moduleScope.vars[name] = node
 
@@ -39,6 +42,9 @@ const declareType = (module, type, primitive, flags = 0) => {
 		primitive,
 		flags,
 		isType: true
+	}
+	if(flags & TypeFlag.Array) {
+		typeNode.arrayType = numberType
 	}
 	module.scope.vars[type] = typeNode
 	return typeNode
@@ -89,6 +95,14 @@ const declareStd = (module) => {
 	objectType = declareType(module, "Object", PrimitiveType.Object)
 	arrayType = declareType(module, "Array", PrimitiveType.Array, TypeFlag.Array)
 
+	const float32ArrayType = declareClass(module, "Float32Array", {
+		constructor: createFunc([
+			[],
+			[ numberType ],
+			[ arrayType ]
+		])
+	}, TypeFlag.Array)
+
 	const webglContext = declareClass(module, "WebGLRenderingContext", {
 		clear: createFunc([[ numberType ]]),
 		clearColor: createFunc([[ numberType, numberType, numberType, numberType ]]),
@@ -97,10 +111,18 @@ const declareStd = (module) => {
 		disable: createFunc([[ numberType ]]),
 		depthFunc: createFunc([[ numberType ]]),
 		viewport: createFunc([[ numberType, numberType, numberType, numberType ]]),
+		useProgram: createFunc([[ numberType ]]),
+		bindBuffer: createFunc([[ numberType, float32ArrayType ]]),
+		vertexAttribPointer: createFunc([[ numberType, numberType, numberType, booleanType, numberType, numberType ]]),
+		enableVertexAttribArray: createFunc([[ numberType ]]),
+		drawArrays: createFunc([[ numberType, numberType, numberType ]]),
+		FLOAT: createVar(numberType),
 		DEPTH_TEST: createVar(numberType),
 		LEQUAL: createVar(numberType),
 		COLOR_BUFFER_BIT: createVar(numberType),
-		DEPTH_BUFFER_BIT: createVar(numberType)
+		DEPTH_BUFFER_BIT: createVar(numberType),
+		ARRAY_BUFFER: createVar(numberType),
+		TRIANGLE_STRIP: createVar(numberType),
 	})
 
 	const htmlCanvas = declareClass(module, "HTMLCanvasElement", {
@@ -124,14 +146,6 @@ const declareStd = (module) => {
 		min: createFunc([[ numberType, numberType ]], numberType),
 		max: createFunc([[ numberType, numberType ]], numberType)
 	})
-
-	declareClass(module, "Float32Array", {
-		constructor: createFunc([
-			[],
-			[ numberType ],
-			[ arrayType ]
-		])
-	}, TypeFlag.Array)
 }
 
 export { declareStd }

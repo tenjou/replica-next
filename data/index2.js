@@ -25,4 +25,27 @@ const setupWebGL = () => {
 	gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight)
 }
 
+const render = () => {
+	matrixProjection.identity()
+	matrixProjection.ortho(0, canvas.clientWidth, canvas.clientHeight, 0, -1.0, 1.0)
+
+	matrixModelView.identity()
+	matrixModelView.translate(0, 0, 0)
+
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	// gl.useProgram(programInfo.program)
+
+	// gl.bindBuffer(gl.ARRAY_BUFFER, positions)
+	// gl.vertexAttribPointer(programInfo.attribs.position, 2, gl.FLOAT, false, 0, 0)
+	// gl.enableVertexAttribArray(programInfo.attribs.position)
+
+	// gl.uniformMatrix4fv(programInfo.uniforms.matrixProjection, false, matrixProjection.m)
+	// gl.uniformMatrix4fv(programInfo.uniforms.matrixModelView, false, matrixModelView.m)
+
+	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+
+	// requestAnimationFrame(render)
+}
+
 create()
+render()
