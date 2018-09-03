@@ -155,9 +155,8 @@ const parseAssignmentExpression = (node) => {
 }
 
 const parseUnaryExpression = (node) => {
-    parse[node.argument.type](node.argument)
-    node.primitive = node.argument.primitive
-    return node.primitive
+    const varType = parse[node.argument.type](node.argument)
+    return varType
 }
 
 const parseBinaryExpression = (node) => {
