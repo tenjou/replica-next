@@ -47,6 +47,7 @@ const parseBody = (buffer) => {
 			switch(node.type) {
 				case "IfStatement":
 				case "MethodDefinition":
+				case "VariableDeclaration":
 					output += `${nodeOutput}\n`
 					break
 				default:
@@ -146,6 +147,10 @@ const parseVariableDeclaration = (node) => {
 
 const parseVariableDeclarator = (node) => {
 	const initNode = node.init
+	if(initNode.type === "Empty") {
+		return `${parseType(initNode.varType)}${node.id.name};\n`
+	}
+
 	switch(initNode.varType.primitive) {
 		case PrimitiveType.Function:
 			if(initNode.parsed) {
@@ -243,6 +248,22 @@ const parseObjectExpression = (node) => {
 	}
 	decTabs()
 	return `{\n${output}${tabs}};\n\n${staticOutput}\n`
+}
+
+const parseFunctionDeclaration = (node) => {
+	const paramsOutput = parseParams(node.params)
+	const prevScope = scope
+	const prevTabs = tabs
+	scope = node.scope
+	tabs = ""
+
+	let output = `auto ${node.id.name}(${paramsOutput}) `
+	output += parse[node.body.type](node.body) + "\n\n"
+	outerOutput += output
+
+	scope = prevScope
+	tabs = prevTabs
+	return null
 }
 
 const parseClassDeclaration = (node) => {
@@ -406,6 +427,7 @@ const parse = {
 	ThisExpression: parseThisExpression,
 	ArrowFunctionExpression: parseArrowFunctionExpression,
 	ObjectExpression: parseObjectExpression,
+	FunctionDeclaration: parseFunctionDeclaration,
 	ClassDeclaration: parseClassDeclaration,
 	ExportDefaultDeclaration: parseExportDefaultDeclaration,
 	ExportNamedDeclaration: parseExportNamedDeclaration,

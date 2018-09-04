@@ -150,13 +150,25 @@ const parseVariableDeclaration = (node) => {
 }
 
 const parseVariableDeclarator = (node) => {
-    const varType = parse[node.init.type](node.init)
-    node.init.varType = varType
+    if(node.init) {
+        const varType = parse[node.init.type](node.init)
+        node.init.varType = varType
+    }
+    else {
+        node.init = {
+            type: "Empty",
+            varType: topScope.vars.Unknown
+        }
+    }
     scope.vars[node.id.name] = node.init
 }
 
 const parseAssignmentExpression = (node) => {
     const leftVar = getVar(node.left, scope)
+    if(!leftVar) {
+        const name = createName(node.left)
+        Error.reference(name)
+    }
     const leftType = leftVar.varType
     const rightType = parse[node.right.type](node.right)
     if(node.left.computed) {
@@ -196,7 +208,7 @@ const parseCallExpression = (node) => {
     const funcNode = getVar(node.callee, scope)
     if(!funcNode) {
         const name = createName(node.callee)
-        throw `ReferenceError: ${name} is not defined`
+        Error.reference(name)
     }
     if(funcNode.varType.primitive !== PrimitiveType.Function) {
         const name = createName(node.callee)
@@ -283,6 +295,21 @@ const parseNewExpression = (node) => {
         throw `ArgumentCountMismatch: Expected to have${constructorFunc.params.length} arguments but instead got: 0`
     }
     return varNode
+}
+
+const parseFunctionDeclaration = (node) => {
+    defineVar(node.id.name, node)
+
+    const prevScope = scope
+    node.varType = topScope.vars.Function
+    node.scope = scope.createScope()
+    scope = node.scope
+
+    node.signatures = parseParams(node.params)
+    node.parsed = false
+    
+    scope = prevScope
+    return node.varType    
 }
 
 const parseClassDeclaration = (node) => {
@@ -465,6 +492,13 @@ const createName = (node) => {
     throw "NotImplemented"
 }
 
+const defineVar = (name, node) => {
+    if(scope.vars[name]) {
+        Error.redefinition(name)
+    }
+    scope.vars[name] = node
+}
+
 const parse = {
     Body: parseBody,
     ClassBody: parseClassBody,
@@ -489,6 +523,7 @@ const parse = {
     ObjectExpression: parseObjectExpression,
     ThisExpression: parseThisExpression,
     AssignmentPattern: parseAssignmentPattern,
+    FunctionDeclaration: parseFunctionDeclaration,
     ClassDeclaration: parseClassDeclaration,
     ExportDefaultDeclaration: parseExportDefaultDeclaration,
     ExportNamedDeclaration: parseExportNamedDeclaration,
