@@ -1,4 +1,5 @@
 import Scope from "./Scope"
+import Error from "./Error"
 import PrimitiveType from "./PrimitiveType"
 import TypeFlag from "./TypeFlag"
 
@@ -129,6 +130,18 @@ const parseLiteral = (node) => {
     return node.varType
 }
 
+const parseTemplateLiteral = (node) => {
+    const expressions = node.expressions
+    for(let n = 0; n < expressions.length; n++) {
+        const expression = expressions[n]
+        const varType = parse[expression.type](expression)
+        if(varType.primitive !== PrimitiveType.String) {
+            Error.typeMismatch(topScope.vars.String, varType)
+        }
+    }
+    return topScope.vars.String
+}
+
 const parseVariableDeclaration = (node) => {
     const decls = node.declarations
     for(let n = 0; n < decls.length; n++) {
@@ -157,7 +170,7 @@ const parseAssignmentExpression = (node) => {
             return rightType
         }
         else if(leftType !== rightType) {
-            throw `TypeMismatch: Expected type "${PrimitiveTypeKey[rightType]}" but instead got "${PrimitiveTypeKey[leftType]}"`
+            Error.typeMismatch(rightType, leftType)
         }          
     }
     return leftType
@@ -351,7 +364,7 @@ const parseArg = (param, arg) => {
         param.varType = argType
     }
     else if(param.varType !== argType) {
-        throw `TypeMismatch: Expected type "${PrimitiveTypeKey[param.primitive]}" but instead got "${PrimitiveTypeKey[argType]}"`
+        throw `TypeMismatch: Expected type "${param.varType.name}" but instead got "${argType.name}"`
     }
 }
 
@@ -462,6 +475,7 @@ const parse = {
     ArrayExpression: parseArrayExpression,
     Identifier: parseIdentifier,
     Literal: parseLiteral,
+    TemplateLiteral: parseTemplateLiteral,
     VariableDeclaration: parseVariableDeclaration,
     VariableDeclarator: parseVariableDeclarator,
     AssignmentExpression: parseAssignmentExpression,

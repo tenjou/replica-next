@@ -128,6 +128,7 @@ const declareStd = (module) => {
 		attachShader: createFunc([[ webglRenderingContext, webglShader ]]),
 		linkProgram: createFunc([[ webglRenderingContext ]]),
 		getShaderParameter: createFunc([[ webglShader, numberType ]]),
+		getShaderInfoLog: createFunc([[ webglShader ]], stringType),
 		FLOAT: createVar(numberType),
 		DEPTH_TEST: createVar(numberType),
 		LEQUAL: createVar(numberType),
