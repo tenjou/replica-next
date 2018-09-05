@@ -103,10 +103,12 @@ const declareStd = (module) => {
 		])
 	}, TypeFlag.Array)
 
-	const webglShader = declareClass(module, "WebGLShader", {})
-	
 	const webglRenderingContext = declareClass(module, "WebGLRenderingContext", {})
 
+	const webglShader = declareClass(module, "WebGLShader", {})
+	
+	const webglProgram = declareClass(module, "WebGLProgram", {})
+	 
 	const webglContext = declareClass(module, "WebGLRenderingContext", {
 		clear: createFunc([[ numberType ]]),
 		clearColor: createFunc([[ numberType, numberType, numberType, numberType ]]),
@@ -115,7 +117,6 @@ const declareStd = (module) => {
 		disable: createFunc([[ numberType ]]),
 		depthFunc: createFunc([[ numberType ]]),
 		viewport: createFunc([[ numberType, numberType, numberType, numberType ]]),
-		useProgram: createFunc([[ numberType ]]),
 		bindBuffer: createFunc([[ numberType, float32ArrayType ]]),
 		vertexAttribPointer: createFunc([[ numberType, numberType, numberType, booleanType, numberType, numberType ]]),
 		enableVertexAttribArray: createFunc([[ numberType ]]),
@@ -124,11 +125,15 @@ const declareStd = (module) => {
 		shaderSource: createFunc([[ webglShader, stringType ]], webglShader),
 		compileShader: createFunc([[ webglShader ]]),
 		deleteShader: createFunc([[ webglShader ]]),
-		createProgram: createFunc([[]], webglRenderingContext),
-		attachShader: createFunc([[ webglRenderingContext, webglShader ]]),
-		linkProgram: createFunc([[ webglRenderingContext ]]),
+		useProgram: createFunc([[ webglProgram ]]),
+		createProgram: createFunc([[]], webglProgram),
+		attachShader: createFunc([[ webglProgram, webglShader ]]),
+		linkProgram: createFunc([[ webglProgram ]]),
+		getAttribLocation: createFunc([[ webglProgram, stringType ]], numberType),
+		getUniformLocation: createFunc([[ webglProgram, stringType ]], numberType),
 		getShaderParameter: createFunc([[ webglShader, numberType ]]),
 		getShaderInfoLog: createFunc([[ webglShader ]], stringType),
+		uniformMatrix4fv: createFunc([[ numberType, booleanType, float32ArrayType ]]),
 		FLOAT: createVar(numberType),
 		DEPTH_TEST: createVar(numberType),
 		LEQUAL: createVar(numberType),
