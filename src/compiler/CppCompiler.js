@@ -156,17 +156,18 @@ const parseVariableDeclarator = (node) => {
 			if(initNode.parsed) {
 				const prevTabs = tabs
 				tabs = ""
-				outerOutput += parseType(initNode.returnType) + node.id.name + parse[initNode.type](initNode) + "\n"
+				outerOutput += "auto " + node.id.name + parse[initNode.type](initNode) + "\n"
 				tabs = prevTabs
 			}
 			break
 
 		case PrimitiveType.Object:
-			const prevTabs = tabs
-			tabs = ""        
-			outerOutput += `struct ${node.id.name} ${parse[initNode.type](initNode)}`
-			tabs = prevTabs
-			break
+			return null
+			// const prevTabs = tabs
+			// tabs = ""        
+			// outerOutput += `struct ${node.id.name} ${parse[initNode.type](initNode)}`
+			// tabs = prevTabs
+			// break
 
 		default:
 			if(scope.parent === rootScope) {
@@ -236,18 +237,51 @@ const parseArrowFunctionExpression = (node) => {
 }
 
 const parseObjectExpression = (node) => {
-	let output = ""
-	let staticOutput = ""
+	const prevScope = scope
+	const prevTabs = tabs
+	scope = node.scope
+	tabs = ""
+
+	let output = `struct ${parseType(node, false)} {\n`
+	output += parseProperties(node.properties, node)
+	output += `${tabs}};\n`
+	outerOutput += output
+
+	scope = prevScope
+	tabs = prevTabs
+
+	return `new ${parseType(node, false)}()`
+}
+
+const parseProperties = (properties, node) => {
 	incTabs()
-	const props = node.properties
-	for(let n = 0; n < props.length; n++) {
-		const prop = props[n]
-		const baseOutput = `static const ${getType(prop.value)} ${prop.key.name}`
-		output += `${tabs}${baseOutput};\n`
-		staticOutput += `${baseOutput} = ${parse[prop.value.type](prop.value)};\n`
+
+	let output = ""
+	for(let n = 0; n < properties.length; n++) {
+		const property = properties[n]
+		output += `${tabs}${parseType(property.value.varType)}${property.key.name};\n`
+		if(property.value.varType.primitive === PrimitiveType.Object) {
+			parseObjectExpression(property.value)
+		}
+	}
+
+	incTabs()
+	let constructorOutput = ""
+	for(let n = 0; n < properties.length; n++) {
+		const property = properties[n]
+		if(property.value.varType.primitive === PrimitiveType.Object) {
+			constructorOutput += `${tabs}this->${property.key.name} = new ${parseType(property.value.varType, false)}();\n`
+		}
 	}
 	decTabs()
-	return `{\n${output}${tabs}};\n\n${staticOutput}\n`
+
+	if(constructorOutput) {
+		constructorOutput = `${tabs}${parseType(node, false)}() {\n${constructorOutput}${tabs}}\n`
+		output = `${output}\n${constructorOutput}`
+	}
+
+	decTabs()
+	return output
 }
 
 const parseFunctionDeclaration = (node) => {
@@ -303,7 +337,7 @@ const parseMethodDefinition = (node) => {
 			output = createName(insideClass.id) + parseFunctionExpression(node.value)
 			break
 		default:
-			output = parseType(node.value.returnType) + node.key.name + parseFunctionExpression(node.value)
+			output = "auto " + node.key.name + parseFunctionExpression(node.value)
 			break
 	}
 	return output
@@ -341,7 +375,7 @@ const parseArg = (arg) => {
 	return parse[arg.type](arg)
 }
 
-const parseType = (type) => {
+const parseType = (type, pointer = true) => {
 	switch(type.primitive) {
 		case PrimitiveType.Number:
 			return "double "
@@ -349,8 +383,10 @@ const parseType = (type) => {
 			return "bool "
 		case PrimitiveType.String:
 			return "std::string "
+		case PrimitiveType.Object:
+			return pointer ? `__object${type.index}* ` : `__object${type.index}`
 		case PrimitiveType.Class:
-			return `${type.id.name}* `
+			return pointer ? `${type.id.name}* ` : `${type.id.name}`
 		case PrimitiveType.Unknown:
 			return "void "
 	}
