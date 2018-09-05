@@ -3,8 +3,9 @@ import PrimitiveType from "../PrimitiveType"
 let scope = null
 let rootScope = null
 let insideClass = null
-let insideVar = null
 let tabs = ""
+let contentOutput = ""
+let declarationsOutput = ""
 let outerOutput = ""
 let globalVars = ""
 
@@ -20,7 +21,7 @@ const run = (module, rootScope_) => {
 	decTabs()
 	output += "}\n"
 
-	let result = includes + outerOutput
+	let result = includes + contentOutput + declarationsOutput + "\n" + outerOutput
 	if(globalVars) {
 		result += globalVars + "\n"
 	}
@@ -238,7 +239,7 @@ const parseObjectExpression = (node, parseInit = true) => {
 		const prevTabs = tabs
 		tabs = ""
 
-		outerOutput += `struct ${parseType(node, false)} {\n${parseProperties(node.properties)}${tabs}};\n`
+		declarationsOutput += `struct ${parseType(node, false)} {\n${parseProperties(node.properties)}${tabs}};\n`
 		output = `new ${parseType(node, false)} ${parsePropertiesValues(node.properties)}`
 
 		tabs = prevTabs
@@ -427,7 +428,7 @@ const parseDefaultValue = (type) => {
 }
 
 const parseContent = (specifier, content) => {
-	outerOutput += `std::string ${specifier.local.name} = R"(${content})";\n\n`
+	contentOutput += `std::string ${specifier.local.name} = R"(${content})";\n\n`
 }
 
 const createName = (node) => {
