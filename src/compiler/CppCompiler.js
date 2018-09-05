@@ -3,6 +3,7 @@ import PrimitiveType from "../PrimitiveType"
 let scope = null
 let rootScope = null
 let insideClass = null
+let insideVar = null
 let tabs = ""
 let outerOutput = ""
 let globalVars = ""
@@ -161,14 +162,6 @@ const parseVariableDeclarator = (node) => {
 			}
 			break
 
-		case PrimitiveType.Object:
-			return null
-			// const prevTabs = tabs
-			// tabs = ""        
-			// outerOutput += `struct ${node.id.name} ${parse[initNode.type](initNode)}`
-			// tabs = prevTabs
-			// break
-
 		default:
 			if(scope.parent === rootScope) {
 				globalVars += parseType(initNode.varType) + node.id.name + ` = ${parse[initNode.type](initNode)};\n`
@@ -236,21 +229,26 @@ const parseArrowFunctionExpression = (node) => {
 	return parseFunctionExpression(node)
 }
 
-const parseObjectExpression = (node) => {
+const parseObjectExpression = (node, parseInit = true) => {
 	const prevScope = scope
-	const prevTabs = tabs
 	scope = node.scope
-	tabs = ""
 
-	let output = `struct ${parseType(node, false)} {\n`
-	output += parseProperties(node.properties, node)
-	output += `${tabs}};\n`
-	outerOutput += output
+	let output
+	if(parseInit) {
+		const prevTabs = tabs
+		tabs = ""
+
+		outerOutput += `struct ${parseType(node, false)} {\n${parseProperties(node.properties)}${tabs}};\n`
+		output = `new ${parseType(node, false)} ${parsePropertiesValues(node.properties)}`
+
+		tabs = prevTabs
+	}
+	else {
+		output = `struct {\n${parseProperties(node.properties)}${tabs}}`
+	}
 
 	scope = prevScope
-	tabs = prevTabs
-
-	return `new ${parseType(node, false)}()`
+	return output
 }
 
 const parseProperties = (properties, node) => {
@@ -259,28 +257,35 @@ const parseProperties = (properties, node) => {
 	let output = ""
 	for(let n = 0; n < properties.length; n++) {
 		const property = properties[n]
-		output += `${tabs}${parseType(property.value.varType)}${property.key.name};\n`
 		if(property.value.varType.primitive === PrimitiveType.Object) {
-			parseObjectExpression(property.value)
+			output += `${tabs}${parseObjectExpression(property.value, false)} ${property.key.name};\n`
+		}
+		else {
+			output += `${tabs}${parseType(property.value.varType)}${property.key.name};\n`
 		}
 	}
 
-	incTabs()
-	let constructorOutput = ""
-	for(let n = 0; n < properties.length; n++) {
-		const property = properties[n]
+	decTabs()
+	return output
+}
+
+const parsePropertiesValues = (properties) => {
+	if(properties.length === 0) {
+		return
+	}
+	let output = "{ "
+	let property = properties[0]
+	output += parse[property.value.type](property.value)	
+	for(let n = 1; n < properties.length; n++) {
+		property = properties[n]
 		if(property.value.varType.primitive === PrimitiveType.Object) {
-			constructorOutput += `${tabs}this->${property.key.name} = new ${parseType(property.value.varType, false)}();\n`
+			output += `, ${parsePropertiesValues(property.value.properties)}`
+		}
+		else {
+			output += `, ${parse[property.value.type](property.value)}`
 		}
 	}
-	decTabs()
-
-	if(constructorOutput) {
-		constructorOutput = `${tabs}${parseType(node, false)}() {\n${constructorOutput}${tabs}}\n`
-		output = `${output}\n${constructorOutput}`
-	}
-
-	decTabs()
+	output += " }"
 	return output
 }
 
