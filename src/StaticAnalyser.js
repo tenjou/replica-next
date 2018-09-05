@@ -406,7 +406,7 @@ const parseProps = (props) => {
         const key = prop.key.name
         const varType = parse[prop.value.type](prop.value)
         prop.value.varType = varType
-        defineVar(key, varType)
+        defineVar(key, prop.value)
     }
 }
 
