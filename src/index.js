@@ -1,5 +1,5 @@
 import acorn from "../lib/acorn.es"
-import Lexer from "./Lexer"
+import StaticAnalyser from "./StaticAnalyser"
 import Optimizer from "./Optimizer"
 import CppCompiler from "./compiler/CppCompiler"
 import Module from "./Module"
@@ -30,7 +30,7 @@ const fetchMethod = (rootModule, parentModule, path, isMain) => {
 					node = acorn.parse(text, { sourceType: "module" })
 					module.data = node
 					return Promise.resolve()
-						.then(() => { return Lexer.run(rootModule, module, node); })
+						.then(() => { return StaticAnalyser.run(rootModule, module, node); })
 						.then(() => { Optimizer.run(node) })
 				default:
 					module.data = text
@@ -78,8 +78,8 @@ const getExt = (filename) => {
 export default function main() {
 	const rootModule = new Module("", null)
 	Extern.declareStd(rootModule)
-	Lexer.setFetchMethod(fetchMethod)
-	fetchMethod(rootModule, rootModule, "data/index2.js")
+	StaticAnalyser.setFetchMethod(fetchMethod)
+	fetchMethod(rootModule, rootModule, "data/index3.js")
 	.then((module) => {
 		const output = CppCompiler.run(module, rootModule.scope)
 		console.log(output)
