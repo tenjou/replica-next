@@ -24,7 +24,7 @@ const declareClass = (module, name, members, flags = 0) => {
 		isType: true
 	}
 	if(flags & TypeFlag.Array) {
-		node.arrayType = numberType
+		node.templateType = numberType
 	}	
 	node.varType = node
 	moduleScope.vars[name] = node
@@ -44,7 +44,7 @@ const declareType = (module, type, primitive, flags = 0) => {
 		isType: true
 	}
 	if(flags & TypeFlag.Array) {
-		typeNode.arrayType = numberType
+		typeNode.templateType = numberType
 	}
 	module.scope.vars[type] = typeNode
 	return typeNode

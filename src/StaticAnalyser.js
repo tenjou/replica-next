@@ -103,9 +103,32 @@ const parseIfStatement = (node) => {
 }
 
 const parseArrayExpression = (node) => {
-    const varNode = parse[node.left.type](node.left)
-    scope.vars[node.left.name] = varNode
-    return varNode
+    let varType = null
+    const elements = node.elements
+    for(let n = 0; n < elements.length; n++) {
+        const element = elements[n]
+        const currVarType = parse[element.type](element)
+        if(!varType) {
+            if(currVarType.primitive == PrimitiveType.Unknown) {
+                Error.unknownType()
+            }
+            else {
+                varType = currVarType
+            }
+        }
+        if(currVarType != varType) {
+            Error.typeMismatch(currVarType, gotType)
+        }
+    }
+
+    node.varType = topScope.vars.Array
+    if(!varType) {
+        node.varType.templateType = topScope.vars.Unknown
+    }
+    else {
+        node.varType.templateType = varType
+    }
+    return node.varType
 }
 
 const parseIdentifier = (node) => {
@@ -238,7 +261,7 @@ const parseMemberExpression = (node) => {
     else {
         const objNode = parse[node.object.type](node.object)
         if(node.computed) {
-            return objNode.arrayType
+            return objNode.templateType
         }
         varNode = objNode.scope.vars[node.property.name]
         if(!varNode) {

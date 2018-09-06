@@ -11,4 +11,8 @@ const redefinition = (name) => {
     throw `RedefinitionError: ${name} cannot be redefined in this scope`
 }
 
-export { typeMismatch, reference, redefinition }
+const unknownType = () => {
+    throw `UnknownTypeError: Expression should return valid type`
+}
+
+export { typeMismatch, reference, redefinition, unknownType }

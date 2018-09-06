@@ -21,7 +21,7 @@ const run = (module, rootScope_) => {
 	decTabs()
 	output += "}\n"
 
-	let result = includes + contentOutput + declarationsOutput + "\n" + outerOutput
+	let result = includes + contentOutput + declarationsOutput + outerOutput
 	if(globalVars) {
 		result += globalVars + "\n"
 	}
@@ -106,7 +106,19 @@ const parseIfStatement = (node, head = true) => {
 }
 
 const parseArrayExpression = (node) => {
-	console.log(node)
+	const elements = node.elements
+	if(elements.length === 0) {
+		return `${parseType(node.varType)} {}`
+	}
+
+	let element = elements[0]
+	let output = `{ ${parse[element.type](element)}`
+	for(let n = 1; n < elements.length; n++) {
+		element = elements[n]
+		output += `, ${parse[element.type](element)}`
+	}
+	output += " }"
+	return `${parseType(node.varType)} ${output}`
 }
 
 const parseIdentifier = (node) => {
@@ -150,7 +162,7 @@ const parseVariableDeclaration = (node) => {
 const parseVariableDeclarator = (node) => {
 	const initNode = node.init
 	if(initNode.type === "Empty") {
-		return `${parseType(initNode.varType)}${node.id.name};\n`
+		return `${parseType(initNode.varType)} ${node.id.name};\n`
 	}
 
 	switch(initNode.varType.primitive) {
@@ -165,7 +177,7 @@ const parseVariableDeclarator = (node) => {
 
 		default:
 			if(scope.parent === rootScope) {
-				globalVars += parseType(initNode.varType) + node.id.name + ` = ${parse[initNode.type](initNode)};\n`
+				globalVars += `${parseType(initNode.varType)} ${node.id.name} = ${parse[initNode.type](initNode)};\n`
 				return null
 			}
 			return `auto ${node.id.name} = ${parse[initNode.type](initNode)}`
@@ -239,7 +251,7 @@ const parseObjectExpression = (node, parseInit = true) => {
 		const prevTabs = tabs
 		tabs = ""
 
-		declarationsOutput += `struct ${parseType(node, false)} {\n${parseProperties(node.properties)}${tabs}};\n`
+		declarationsOutput += `struct ${parseType(node, false)} {\n${parseProperties(node.properties)}${tabs}};\n\n`
 		output = `new ${parseType(node, false)} ${parsePropertiesValues(node.properties)}`
 
 		tabs = prevTabs
@@ -262,7 +274,7 @@ const parseProperties = (properties, node) => {
 			output += `${tabs}${parseObjectExpression(property.value, false)} ${property.key.name};\n`
 		}
 		else {
-			output += `${tabs}${parseType(property.value.varType)}${property.key.name};\n`
+			output += `${tabs}${parseType(property.value.varType)} ${property.key.name};\n`
 		}
 	}
 
@@ -362,7 +374,7 @@ const parseParams = (params) => {
 }
 
 const parseParam = (param) => {
-	return parseType(param.varType) + param.name
+	return `${parseType(param.varType)} ${param.name}`
 }
 
 const parseArgs = (args) => {
@@ -384,19 +396,22 @@ const parseArg = (arg) => {
 const parseType = (type, pointer = true) => {
 	switch(type.primitive) {
 		case PrimitiveType.Number:
-			return "double "
+			return "double"
 		case PrimitiveType.Boolean:
-			return "bool "
+			return "bool"
 		case PrimitiveType.String:
-			return "std::string "
+			return "std::string"
+		case PrimitiveType.Array:
+			const templateOutput = `<${parseType(type.templateType)}>`
+			return `Array${templateOutput}`	
 		case PrimitiveType.Object:
-			return pointer ? `__object${type.index}* ` : `__object${type.index}`
+			return pointer ? `__object${type.index}*` : `__object${type.index}`
 		case PrimitiveType.Class:
-			return pointer ? `${type.id.name}* ` : `${type.id.name}`
+			return pointer ? `${type.id.name}*` : `${type.id.name}`
 		case PrimitiveType.Unknown:
-			return "void "
+			return "void"
 	}
-	return `${type.name} `
+	return `${type.name}`
 }
 
 const parseVars = (vars) => {
@@ -407,10 +422,10 @@ const parseVars = (vars) => {
 			case PrimitiveType.Function:
 				break
 			case PrimitiveType.Class:
-				output += tabs + parseType(node.varType) + key + " = nullptr;\n"
+				output += tabs + `${parseType(node.varType)} ${key} = nullptr;\n`
 				break
 			default:
-				output += tabs + parseType(node.varType) + key + "= ${parseDefaultValue(node.varType)};\n"
+				output += tabs + `${parseType(node.varType)} ${key} = ${parseDefaultValue(node.varType)};\n`
 				break
 		}
 	}
