@@ -10,6 +10,10 @@ let functionType
 let objectType
 let arrayType
 
+const declareFunc = (module, name, func) => {
+	module.scope.vars[name] = func
+}
+
 const declareClass = (module, name, members, flags = 0) => {
 	const moduleScope = module.scope
 	const scope = new Scope(moduleScope)
@@ -94,6 +98,8 @@ const declareStd = (module) => {
 	functionType = declareType(module, "Function", PrimitiveType.Function)
 	objectType = declareType(module, "Object", PrimitiveType.Object)
 	arrayType = declareType(module, "Array", PrimitiveType.Array, TypeFlag.Array)
+
+	declareFunc(module, "requestAnimationFrame", createFunc([[]]))
 
 	const float32ArrayType = declareClass(module, "Float32Array", {
 		constructor: createFunc([
