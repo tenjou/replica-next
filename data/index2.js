@@ -7,6 +7,7 @@ let matrixModelView = new Matrix4()
 let canvas = null
 let gl = null
 let programInfo = null
+let positions = null
 
 const create = () => {
 	canvas = document.createElement("canvas")
@@ -18,6 +19,7 @@ const create = () => {
 
 	setupWebGL()
 	initShaderProgram(basicVS, basicFS)
+	initBuffers()
 }
 
 const setupWebGL = () => {
@@ -64,6 +66,18 @@ const loadShader = (type, source) => {
 	return shader
 }
 
+const initBuffers = () => {
+	const vertices = [
+		100.0, 100.0,
+		0.0, 100.0,
+		100.0, 0.0,
+		0.0, 0.0
+	]
+	positions = gl.createBuffer()
+	gl.bindBuffer(gl.ARRAY_BUFFER, positions)
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
+}
+
 const render = () => {
 	matrixProjection.identity()
 	matrixProjection.ortho(0, canvas.clientWidth, canvas.clientHeight, 0, -1.0, 1.0)
@@ -74,7 +88,7 @@ const render = () => {
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	gl.useProgram(programInfo.program)
 
-	// gl.bindBuffer(gl.ARRAY_BUFFER, positions)
+	gl.bindBuffer(gl.ARRAY_BUFFER, positions)
 	gl.vertexAttribPointer(programInfo.attribs.position, 2, gl.FLOAT, false, 0, 0)
 	gl.enableVertexAttribArray(programInfo.attribs.position)
 
