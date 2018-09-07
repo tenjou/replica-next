@@ -177,7 +177,8 @@ const parseVariableDeclarator = (node) => {
 
 		default:
 			if(scope.parent === rootScope) {
-				globalVars += `${parseType(initNode.varType)} ${node.id.name} = ${parse[initNode.type](initNode)};\n`
+				const type = (initNode.type === "Literal") ? parseType(initNode.varType) : "auto"
+				globalVars += `${type} ${node.id.name} = ${parse[initNode.type](initNode)};\n`
 				return null
 			}
 			return `auto ${node.id.name} = ${parse[initNode.type](initNode)}`
