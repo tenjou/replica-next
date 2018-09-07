@@ -108,7 +108,9 @@ const declareStd = (module) => {
 	const webglShader = declareClass(module, "WebGLShader", {})
 	
 	const webglProgram = declareClass(module, "WebGLProgram", {})
-	 
+
+	const webglBuffer = declareClass(module, "WebGLBuffer", {})
+
 	const webglContext = declareClass(module, "WebGLRenderingContext", {
 		clear: createFunc([[ numberType ]]),
 		clearColor: createFunc([[ numberType, numberType, numberType, numberType ]]),
@@ -134,6 +136,9 @@ const declareStd = (module) => {
 		getShaderParameter: createFunc([[ webglShader, numberType ]]),
 		getShaderInfoLog: createFunc([[ webglShader ]], stringType),
 		uniformMatrix4fv: createFunc([[ numberType, booleanType, float32ArrayType ]]),
+		createBuffer: createFunc([[]], webglBuffer),
+		bindBuffer: createFunc([[ numberType, webglBuffer ]]),
+		bufferData: createFunc([[ numberType, float32ArrayType, numberType ]]),
 		FLOAT: createVar(numberType),
 		DEPTH_TEST: createVar(numberType),
 		LEQUAL: createVar(numberType),
@@ -144,6 +149,8 @@ const declareStd = (module) => {
 		VERTEX_SHADER: createVar(numberType),
 		FRAGMENT_SHADER: createVar(numberType),
 		COMPILE_STATUS: createVar(numberType),
+		ARRAY_BUFFER: createVar(numberType),
+		STATIC_DRAW: createVar(numberType),
 	})
 
 	const htmlCanvas = declareClass(module, "HTMLCanvasElement", {
