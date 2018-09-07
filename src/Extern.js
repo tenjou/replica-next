@@ -99,7 +99,7 @@ const declareStd = (module) => {
 	objectType = declareType(module, "Object", PrimitiveType.Object)
 	arrayType = declareType(module, "Array", PrimitiveType.Array, TypeFlag.Array)
 
-	declareFunc(module, "requestAnimationFrame", createFunc([[]]))
+	declareFunc(module, "requestAnimationFrame", createFunc([[ createFunc([[]]) ]]))
 
 	const float32ArrayType = declareClass(module, "Float32Array", {
 		constructor: createFunc([
