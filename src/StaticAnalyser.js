@@ -406,7 +406,15 @@ const parseArgs = (signatures, args) => {
         }
         const params = signature.params
         for(let n = 0; n < args.length; n++) {
-            parseArg(params[n], args[n])
+            const param = params[n]
+            const arg = args[n]
+            const argType = parse[arg.type](arg)
+            if(param.varType.primitive === PrimitiveType.Unknown) {
+                param.varType = argType
+            }
+            else if(param.varType !== argType) {
+                continue
+            }
         }
         return
     }
@@ -414,13 +422,7 @@ const parseArgs = (signatures, args) => {
 }
 
 const parseArg = (param, arg) => {
-    const argType = parse[arg.type](arg)
-    if(param.varType.primitive === PrimitiveType.Unknown) {
-        param.varType = argType
-    }
-    else if(param.varType !== argType) {
-        throw `TypeMismatch: Expected type "${param.varType.name}" but instead got "${argType.name}"`
-    }
+
 }
 
 const parseProps = (props) => {
