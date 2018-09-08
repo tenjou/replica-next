@@ -410,7 +410,7 @@ const parseType = (type, pointer = true) => {
 		case PrimitiveType.Class:
 			return pointer ? `${type.id.name}*` : `${type.id.name}`
 		case PrimitiveType.Unknown:
-			return "void"
+			return "void*"
 	}
 	return `${type.name}`
 }
