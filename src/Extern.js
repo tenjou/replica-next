@@ -2,6 +2,7 @@ import Scope from "./Scope"
 import PrimitiveType from "./PrimitiveType"
 import TypeFlag from "./TypeFlag"
 
+let noneType
 let unknownType
 let numberType
 let booleanType
@@ -62,14 +63,16 @@ const createVar = (type) => {
 	}
 }
 
-const createFunc = (params, returnType = unknownType) => {
+const createFunc = (params, returnType = noneType, flags = 0) => {
 	const signatures = createParams(params)
-	return {
+	const type = Object.assign({
 		signatures,
 		parsed: true,
-		varType: functionType,
 		returnType
-	}
+	}, functionType)
+	type.flags = flags
+	type.varType = type
+	return type
 }
 
 const createParams = (params) => {
@@ -91,6 +94,7 @@ const createParams = (params) => {
 }
 
 const declareStd = (module) => {
+	noneType = declareType(module, "None", PrimitiveType.None)
 	unknownType = declareType(module, "Unknown", PrimitiveType.Unknown)
 	numberType = declareType(module, "Number", PrimitiveType.Number)
 	booleanType = declareType(module, "Boolean", PrimitiveType.Boolean)
@@ -170,8 +174,8 @@ const declareStd = (module) => {
 	})
 
 	declareClass(module, "console", {
-		log: createFunc([[ stringType ]]),
-		error: createFunc([[ stringType ]])
+		log: createFunc([[ stringType ]], noneType, TypeFlag.Static),
+		error: createFunc([[ stringType ]], noneType, TypeFlag.Static)
 	})
 
 	declareClass(module, "Math", {

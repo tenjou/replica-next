@@ -1,4 +1,5 @@
 import PrimitiveType from "../PrimitiveType"
+import TypeFlag from "../TypeFlag";
 
 let scope = null
 let rootScope = null
@@ -181,7 +182,7 @@ const parseVariableDeclarator = (node) => {
 				globalVars += `${type} ${node.id.name} = ${parse[initNode.type](initNode)};\n`
 				return null
 			}
-			return `auto ${node.id.name} = ${parse[initNode.type](initNode)}`
+			return `auto ${node.id.name} = ${parse[initNode.type](initNode)};`
 	}
 
 	return null
@@ -206,7 +207,7 @@ const parseMemberExpression = (node) => {
 		const output = `${parse[node.object.type](node.object)}[${parse[node.property.type](node.property)}]`
 		return output
 	}
-	const connection = node.property.isStatic ? "::" : "->"
+	const connection = (node.property.varType.flags & TypeFlag.Static) ? "::" : "->"
 	const output = parse[node.object.type](node.object) + connection + parse[node.property.type](node.property) 
 	return output
 }

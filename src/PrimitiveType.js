@@ -1,13 +1,14 @@
 
 const PrimitiveType = {
-    Unknown: 0,
-    Number: 1,
-    Boolean: 2,
-    String: 3,
-    Function: 4,
-    Object: 5,
-    Array: 6,
-    Class: 7,
+    None: 0,
+    Unknown: 1,
+    Number: 2,
+    Boolean: 3,
+    String: 4,
+    Function: 5,
+    Object: 6,
+    Array: 7,
+    Class: 8,
 }
 
 export default PrimitiveType
