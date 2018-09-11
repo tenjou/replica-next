@@ -171,7 +171,7 @@ const parseVariableDeclarator = (node) => {
 			if(initNode.parsed) {
 				const prevTabs = tabs
 				tabs = ""
-				outerOutput += "auto " + node.id.name + parse[initNode.type](initNode) + "\n"
+				outerOutput += `${parseType(initNode.returnType)} ${node.id.name} ${parse[initNode.type](initNode)}\n`
 				tabs = prevTabs
 			}
 			break
@@ -182,7 +182,7 @@ const parseVariableDeclarator = (node) => {
 				globalVars += `${type} ${node.id.name} = ${parse[initNode.type](initNode)};\n`
 				return null
 			}
-			return `auto ${node.id.name} = ${parse[initNode.type](initNode)};`
+			return `parseType(initNode.varType) ${node.id.name} = ${parse[initNode.type](initNode)};`
 	}
 
 	return null
@@ -357,7 +357,7 @@ const parseMethodDefinition = (node) => {
 			output = createName(insideClass.id) + parseFunctionExpression(node.value)
 			break
 		default:
-			output = "auto " + node.key.name + parseFunctionExpression(node.value)
+			output = `${parseType(node.value.returnType)} ${node.key.name}${parseFunctionExpression(node.value)}`
 			break
 	}
 	return output
@@ -397,6 +397,8 @@ const parseArg = (arg) => {
 
 const parseType = (type, pointer = true) => {
 	switch(type.primitive) {
+		case PrimitiveType.None:
+			return "void"
 		case PrimitiveType.Number:
 			return "double"
 		case PrimitiveType.Boolean:

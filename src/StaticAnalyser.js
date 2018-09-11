@@ -446,10 +446,10 @@ const parseFunctionBody = (node) => {
 	parse[node.body.type](node.body)
 	
 	const returns = scope.returns
-	let returnType = topScope.vars.Unknown
+	let returnType = topScope.vars.None
 	for(let n = 0; n < returns.length; n++) {
 		const itemType = returns[n].varType
-		if(returnType.primitive === PrimitiveType.Unknown) {
+		if(returnType.primitive === PrimitiveType.None || returnType.primitive === PrimitiveType.Unknown) {
 			returnType = itemType
 		}
 		else if(returnType !== itemType) {
