@@ -22,10 +22,11 @@ const run = (module, rootScope_) => {
 	decTabs()
 	output += "}\n"
 
-	let result = includes + contentOutput + declarationsOutput + outerOutput
+	let result = includes + contentOutput + declarationsOutput
 	if(globalVars) {
 		result += globalVars + "\n"
 	}
+	result += outerOutput
 	result += output
 	return result
 }
@@ -168,12 +169,14 @@ const parseVariableDeclarator = (node) => {
 
 	switch(initNode.varType.primitive) {
 		case PrimitiveType.Function:
-			if(initNode.parsed) {
-				const prevTabs = tabs
-				tabs = ""
-				outerOutput += `${parseType(initNode.returnType)} ${node.id.name}${parse[initNode.type](initNode)}\n`
-				tabs = prevTabs
-			}
+			if(!initNode.parsed) { return null }
+
+			const prevTabs = tabs
+			tabs = ""
+			const head = `${parseType(initNode.returnType)} ${node.id.name}`
+			declarationsOutput += `${head};\n\n`
+			outerOutput += `${head}${parse[initNode.type](initNode)}\n`
+			tabs = prevTabs
 			break
 
 		default:
@@ -182,7 +185,7 @@ const parseVariableDeclarator = (node) => {
 				globalVars += `${type} ${node.id.name} = ${parse[initNode.type](initNode)};\n`
 				return null
 			}
-			return `parseType(initNode.varType) ${node.id.name} = ${parse[initNode.type](initNode)};`
+			return `${parseType(initNode.varType)} ${node.id.name} = ${parse[initNode.type](initNode)};`
 	}
 
 	return null
