@@ -207,7 +207,7 @@ const parseBinaryExpression = (node) => {
 
 const parseMemberExpression = (node) => {
 	if(node.computed) {
-		const output = `${parse[node.object.type](node.object)}[${parse[node.property.type](node.property)}]`
+		const output = `${parse[node.object.type](node.object)}->$subscript(${parse[node.property.type](node.property)})`
 		return output
 	}
 	const connection = (node.property.varType.flags & TypeFlag.Static) ? "::" : "->"
@@ -328,7 +328,7 @@ const parseClassDeclaration = (node) => {
 	scope = node.scope
 	tabs = ""
 	insideClass = node
-	outerOutput += `struct ${node.id.name} ${parse[node.body.type](node.body)};\n\n`
+	declarationsOutput += `struct ${node.id.name} ${parse[node.body.type](node.body)};\n\n`
 	insideClass = null
 	tabs = prevTabs
 	scope = prevScope
