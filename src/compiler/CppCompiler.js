@@ -174,7 +174,7 @@ const parseVariableDeclarator = (node) => {
 			const prevTabs = tabs
 			tabs = ""
 			const head = `${parseType(initNode.returnType)} ${node.id.name}`
-			declarationsOutput += `${head};\n\n`
+			declarationsOutput += `${head}(${parseParams(initNode.params, false)});\n\n`
 			outerOutput += `${head}${parse[initNode.type](initNode)}\n`
 			tabs = prevTabs
 			break
@@ -236,8 +236,7 @@ const parseFunctionExpression = (node) => {
 	const prevScope = scope
 	scope = node.scope
 
-	let output = `(${paramsOutput}) `
-	output += parse[node.body.type](node.body) + "\n"
+	const output = `(${paramsOutput}) ${parse[node.body.type](node.body)}\n`
 
 	scope = prevScope
 	return output
@@ -366,20 +365,20 @@ const parseMethodDefinition = (node) => {
 	return output
 }
 
-const parseParams = (params) => {
+const parseParams = (params, needName = true) => {
 	if(params.length === 0) {
 		return ""
 	}
 
-	let output = parseParam(params[0])
+	let output = parseParam(params[0], needName)
 	for(let n = 1; n < params.length; n++) {
-		output += `, ${parseParam(params[n])}`
+		output += `, ${parseParam(params[n], needName)}`
 	}
 	return output
 }
 
-const parseParam = (param) => {
-	return `${parseType(param.varType)} ${param.name}`
+const parseParam = (param, needName) => {
+	return needName ? `${parseType(param.varType)} ${param.name}` : parseType(param.varType)
 }
 
 const parseArgs = (args) => {
