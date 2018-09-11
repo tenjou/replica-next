@@ -171,7 +171,7 @@ const parseVariableDeclarator = (node) => {
 			if(initNode.parsed) {
 				const prevTabs = tabs
 				tabs = ""
-				outerOutput += `${parseType(initNode.returnType)} ${node.id.name} ${parse[initNode.type](initNode)}\n`
+				outerOutput += `${parseType(initNode.returnType)} ${node.id.name}${parse[initNode.type](initNode)}\n`
 				tabs = prevTabs
 			}
 			break

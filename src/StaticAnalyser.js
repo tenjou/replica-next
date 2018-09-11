@@ -84,7 +84,7 @@ const parseReturnStatement = (node) => {
 		node.varType = parse[node.argument.type](node.argument)
 	}
 	else {
-		node.varType = topScope.vars.Unknown
+		node.varType = topScope.vars.None
 	}
 	scope.returns.push(node)
 }
