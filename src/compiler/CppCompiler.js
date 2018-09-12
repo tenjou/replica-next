@@ -210,7 +210,20 @@ const parseMemberExpression = (node) => {
 		const output = `${parse[node.object.type](node.object)}->$subscript(${parse[node.property.type](node.property)})`
 		return output
 	}
-	const connection = (node.property.varType.flags & TypeFlag.Static) ? "::" : "->"
+
+	let connection
+	if(node.property.varType.flags & TypeFlag.Static) {
+		connection = "::"
+	}
+	else {
+		if(node.varType.flags & TypeFlag.Inline) {
+			connection = "."
+		}
+		else {
+			connection = "->"
+		}
+	}
+
 	const output = parse[node.object.type](node.object) + connection + parse[node.property.type](node.property) 
 	return output
 }

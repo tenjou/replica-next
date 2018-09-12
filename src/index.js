@@ -7,7 +7,7 @@ import Extern from "./Extern"
 
 const modulesLoaded = {}
 
-const fetchMethod = (rootModule, parentModule, path, isMain) => {
+const fetchMethod = (rootModule, parentModule, path) => {
 	let module = null
 	let node = null
 
@@ -80,8 +80,8 @@ export default function main() {
 	Extern.declareStd(rootModule)
 	StaticAnalyser.setFetchMethod(fetchMethod)
 	fetchMethod(rootModule, rootModule, "data/index2.js")
-	.then((module) => {
-		const output = CppCompiler.run(module, rootModule.scope)
-		console.log(output)
-	})
+		.then((module) => {
+			const output = CppCompiler.run(module, rootModule.scope)
+			console.log(output)
+		})
 }

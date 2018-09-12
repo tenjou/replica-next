@@ -10,7 +10,8 @@ let module = null
 let scope = null
 
 const globalContext = {
-	objectIndex: 0
+	objectIndex: 0,
+	objectInline: false
 }
 
 const run = (rootModule_, module_, node) => {
@@ -191,6 +192,7 @@ const parseVariableDeclarator = (node) => {
 }
 
 const parseAssignmentExpression = (node) => {
+	parse[node.left.type](node.left)
 	const leftVar = getVar(node.left, scope)
 	if(!leftVar) {
 		const name = createName(node.left)
@@ -232,6 +234,7 @@ const parseBinaryExpression = (node) => {
 }
 
 const parseCallExpression = (node) => {
+	parse[node.callee.type](node.callee)
 	const funcNode = getVar(node.callee, scope)
 	if(!funcNode) {
 		const name = createName(node.callee)
@@ -257,10 +260,12 @@ const parseMemberExpression = (node) => {
 			varNode.varType = topScope.vars.Unknown
 			parentScope.vars[node.property.name] = varNode
 		}
+		node.varType = varNode.varType		
 		node.property.varType = varNode.varType
 	}
 	else {
 		const objNode = parse[node.object.type](node.object)
+		node.varType = objNode.varType	
 		if(node.computed) {
 			return objNode.templateType
 		}
@@ -271,6 +276,7 @@ const parseMemberExpression = (node) => {
 		}
 		node.property.varType = varNode.varType    
 	}
+
 	return varNode.varType
 }
 
@@ -292,13 +298,24 @@ const parseArrowFunctionExpression = (node) => {
 }
 
 const parseObjectExpression = (node) => {
+	node.flags = globalContext.objectInline ? TypeFlag.Inline : 0
 	node.scope = scope.createScope()
 	node.primitive = PrimitiveType.Object
 	node.index = globalContext.objectIndex++
+	node.varType = node
 
 	const prevScope = scope
 	scope = node.scope
-	parseProps(node.properties)
+
+	if(!globalContext.objectInline) {
+		globalContext.objectInline = true
+		parseProps(node.properties)
+		globalContext.objectInline = false
+	}
+	else {
+		parseProps(node.properties)
+	}
+
 	scope = prevScope
 	return node
 }
