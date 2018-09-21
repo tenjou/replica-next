@@ -202,7 +202,7 @@ const parseUnaryExpression = (node) => {
 }
 
 const parseBinaryExpression = (node) => {
-	return `${parse[node.left.type](node.left)} ${node.operator} ${parse[node.right.type](node.right)}` 
+	return `(${parse[node.left.type](node.left)} ${node.operator} ${parse[node.right.type](node.right)})` 
 }
 
 const parseMemberExpression = (node) => {
