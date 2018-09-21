@@ -42,14 +42,14 @@ typedef char GLchar;
 #define GL_INFO_LOG_LENGTH                0x8B84
 #define GL_INVALID_INDEX                  0xFFFFFFFFu
 
-void _GLCheck_Succeeded(const char* code, int line) {
+static void checkErrorOGL(const char* code, int line) {
 	auto err = glGetError();
 	if(err != GL_NO_ERROR) {
 		fprintf(stderr, "GL call failed (error=%X, line %d): %s\n", err, line, code);
 		exit(1);
 	}
 }
-#define GLCHK(x) x;_GLCheck_Succeeded(#x, __LINE__)
+#define GLCHK(x) x;checkErrorOGL(#x, __LINE__)
 
 typedef void (APIENTRYP PFNGLVERTEXATTRIBPOINTERPROC) (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer);
 typedef void (APIENTRYP PFNGLENABLEVERTEXATTRIBARRAYPROC) (GLuint index);
@@ -214,6 +214,35 @@ struct WebGLShader {
 
 struct WebGLRenderingContext {
 	WebGLRenderingContext() {
+		hDC = GetDC(hWnd);
+
+		PIXELFORMATDESCRIPTOR pfd;
+		memset(&pfd, 0, sizeof(pfd));
+		pfd.nSize = sizeof(pfd);
+		pfd.nVersion = 1;
+		pfd.dwFlags = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW;
+		pfd.iPixelType = PFD_TYPE_RGBA;
+		pfd.cColorBits = 32;
+		pfd.cDepthBits = 32;
+		pfd.iLayerType = PFD_MAIN_PLANE;
+
+		int pf = ChoosePixelFormat(hDC, &pfd);
+		if(pf == 0) {
+			fprintf(stderr, "Failed to find suitable pixel format.");
+			exit(1);
+		}
+
+		if(SetPixelFormat(hDC, pf, &pfd) == FALSE) {
+			fprintf(stderr, "Failed to set specified pixel format.");
+			exit(1);
+		}
+
+		DescribePixelFormat(hDC, pf, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
+
+		hRC = wglCreateContext(hDC);
+		wglMakeCurrent(hDC, hRC);
+
+		this->loadExtensions();
 	}
 
 	~WebGLRenderingContext() {
@@ -359,6 +388,36 @@ struct WebGLRenderingContext {
 	static const int STATIC_DRAW;
 
 	private:
+	void loadExtensions() {
+		*(void**)&glVertexAttribPointer = wglGetProcAddress("glVertexAttribPointer");
+		*(void**)&glEnableVertexAttribArray = wglGetProcAddress("glEnableVertexAttribArray");
+		*(void**)&glBindBuffer = wglGetProcAddress("glBindBuffer");
+		*(void**)&glDeleteBuffers = wglGetProcAddress("glDeleteBuffers");
+		*(void**)&glGenBuffers = wglGetProcAddress("glGenBuffers");
+		*(void**)&glBufferData = wglGetProcAddress("glBufferData");
+		*(void**)&glBufferSubData = wglGetProcAddress("glBufferSubData");
+		*(void**)&glAttachShader = wglGetProcAddress("glAttachShader");
+		*(void**)&glCompileShader = wglGetProcAddress("glCompileShader");
+		*(void**)&glCreateProgram = wglGetProcAddress("glCreateProgram");
+		*(void**)&glCreateShader = wglGetProcAddress("glCreateShader");
+		*(void**)&glDeleteProgram = wglGetProcAddress("glDeleteProgram");
+		*(void**)&glDeleteShader = wglGetProcAddress("glDeleteShader");
+		*(void**)&glDetachShader = wglGetProcAddress("glDetachShader");
+		*(void**)&glGetProgramiv = wglGetProcAddress("glGetProgramiv");
+		*(void**)&glGetProgramInfoLog = wglGetProcAddress("glGetProgramInfoLog");
+		*(void**)&glGetShaderiv = wglGetProcAddress("glGetShaderiv");
+		*(void**)&glGetShaderInfoLog = wglGetProcAddress("glGetShaderInfoLog");
+		*(void**)&glGetUniformLocation = wglGetProcAddress("glGetUniformLocation");
+		*(void**)&glLinkProgram = wglGetProcAddress("glLinkProgram");
+		*(void**)&glShaderSource = wglGetProcAddress("glShaderSource");
+		*(void**)&glUseProgram = wglGetProcAddress("glUseProgram");
+		*(void**)&glUniform2f = wglGetProcAddress("glUniform2f");
+		*(void**)&glUniform1i = wglGetProcAddress("glUniform1i");
+		*(void**)&glUniformMatrix2fv = wglGetProcAddress("glUniformMatrix2fv");
+		*(void**)&glUniformMatrix4fv = wglGetProcAddress("glUniformMatrix4fv");
+		*(void**)&glValidateProgram = wglGetProcAddress("glValidateProgram");
+		*(void**)&glGetAttribLocation = wglGetProcAddress("glGetAttribLocation");
+	}
 };
 
 const int WebGLRenderingContext::TRIANGLES = GL_TRIANGLES;
@@ -388,7 +447,38 @@ struct HTMLCanvasElement {
 	int clientWidth = 800;
 	int clientHeight = 600;
 
-	HTMLCanvasElement() {}
+	HTMLCanvasElement() {
+		HINSTANCE hInstance = GetModuleHandle(nullptr);
+
+		WNDCLASSA wc;
+		memset(&wc, 0, sizeof(wc));
+		wc.style = CS_OWNDC;
+		wc.lpfnWndProc = (WNDPROC)WndProc;
+		wc.cbClsExtra = 0;
+		wc.cbWndExtra = 0;
+		wc.hInstance = hInstance;
+		wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
+		wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+		wc.hbrBackground = NULL;
+		wc.lpszMenuName = NULL;
+		wc.lpszClassName = "replica";
+		if(!RegisterClass(&wc)) {
+			fprintf(stderr, "Failed to register window class");
+			exit(1);
+		}
+
+		RECT winRect = { 0, 0, 800, 600 };
+		AdjustWindowRect(&winRect, WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE, FALSE);
+		hWnd = CreateWindowA("replica", "replica",
+			WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE,
+			CW_USEDEFAULT, CW_USEDEFAULT,
+			800, 600,
+			nullptr, nullptr, hInstance, nullptr);
+		if(!hWnd) {
+			fprintf(stderr, "Failed to create window");
+			exit(1);
+		}
+	}
 
 	~HTMLCanvasElement() {
 		DestroyWindow(hWnd);
@@ -408,108 +498,9 @@ struct Document {
 const auto document = new Document();
 
 static void startMainLoop() {
+	if(started) { return; }
 	started = true;
-}
 
-void requestAnimationFrame(void (*func)()) {
-	requestAnimationFrameFunc = func;
-}
-
-void loadExtensions() {
-	*(void**)&glVertexAttribPointer = wglGetProcAddress("glVertexAttribPointer");
-	*(void**)&glEnableVertexAttribArray = wglGetProcAddress("glEnableVertexAttribArray");
-	*(void**)&glBindBuffer = wglGetProcAddress("glBindBuffer");
-	*(void**)&glDeleteBuffers = wglGetProcAddress("glDeleteBuffers");
-	*(void**)&glGenBuffers = wglGetProcAddress("glGenBuffers");
-	*(void**)&glBufferData = wglGetProcAddress("glBufferData");
-	*(void**)&glBufferSubData = wglGetProcAddress("glBufferSubData");
-	*(void**)&glAttachShader = wglGetProcAddress("glAttachShader");
-	*(void**)&glCompileShader = wglGetProcAddress("glCompileShader");
-	*(void**)&glCreateProgram = wglGetProcAddress("glCreateProgram");
-	*(void**)&glCreateShader = wglGetProcAddress("glCreateShader");
-	*(void**)&glDeleteProgram = wglGetProcAddress("glDeleteProgram");
-	*(void**)&glDeleteShader = wglGetProcAddress("glDeleteShader");
-	*(void**)&glDetachShader = wglGetProcAddress("glDetachShader");
-	*(void**)&glGetProgramiv = wglGetProcAddress("glGetProgramiv");
-	*(void**)&glGetProgramInfoLog = wglGetProcAddress("glGetProgramInfoLog");
-	*(void**)&glGetShaderiv = wglGetProcAddress("glGetShaderiv");
-	*(void**)&glGetShaderInfoLog = wglGetProcAddress("glGetShaderInfoLog");
-	*(void**)&glGetUniformLocation = wglGetProcAddress("glGetUniformLocation");
-	*(void**)&glLinkProgram = wglGetProcAddress("glLinkProgram");
-	*(void**)&glShaderSource = wglGetProcAddress("glShaderSource");
-	*(void**)&glUseProgram = wglGetProcAddress("glUseProgram");
-	*(void**)&glUniform2f = wglGetProcAddress("glUniform2f");
-	*(void**)&glUniform1i = wglGetProcAddress("glUniform1i");
-	*(void**)&glUniformMatrix2fv = wglGetProcAddress("glUniformMatrix2fv");
-	*(void**)&glUniformMatrix4fv = wglGetProcAddress("glUniformMatrix4fv");
-	*(void**)&glValidateProgram = wglGetProcAddress("glValidateProgram");
-	*(void**)&glGetAttribLocation = wglGetProcAddress("glGetAttribLocation");
-}
-
-void replica_init() {
-	HINSTANCE hInstance = GetModuleHandle(nullptr);
-
-	WNDCLASSA wc;
-	memset(&wc, 0, sizeof(wc));
-	wc.style = CS_OWNDC;
-	wc.lpfnWndProc = (WNDPROC)WndProc;
-	wc.cbClsExtra = 0;
-	wc.cbWndExtra = 0;
-	wc.hInstance = hInstance;
-	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = NULL;
-	wc.lpszMenuName = NULL;
-	wc.lpszClassName = "replica";
-	if(!RegisterClass(&wc)) {
-		fprintf(stderr, "Failed to register window class");
-		exit(1);
-	}
-
-	RECT winRect = { 0, 0, 800, 600 };
-	AdjustWindowRect(&winRect, WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE, FALSE);
-	hWnd = CreateWindowA("replica", "replica",
-		WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE,
-		CW_USEDEFAULT, CW_USEDEFAULT,
-		800, 600,
-		nullptr, nullptr, hInstance, nullptr);
-	if(!hWnd) {
-		fprintf(stderr, "Failed to create window");
-		exit(1);
-	}
-
-	hDC = GetDC(hWnd);
-
-	PIXELFORMATDESCRIPTOR pfd;
-	memset(&pfd, 0, sizeof(pfd));
-	pfd.nSize = sizeof(pfd);
-	pfd.nVersion = 1;
-	pfd.dwFlags = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW;
-	pfd.iPixelType = PFD_TYPE_RGBA;
-	pfd.cColorBits = 32;
-	pfd.cDepthBits = 32;
-	pfd.iLayerType = PFD_MAIN_PLANE;
-
-	int pf = ChoosePixelFormat(hDC, &pfd);
-	if(pf == 0) {
-		fprintf(stderr, "Failed to find suitable pixel format.");
-		exit(1);
-	}
-
-	if(SetPixelFormat(hDC, pf, &pfd) == FALSE) {
-		fprintf(stderr, "Failed to set specified pixel format.");
-		exit(1);
-	}
-
-	DescribePixelFormat(hDC, pf, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
-
-	hRC = wglCreateContext(hDC);
-	wglMakeCurrent(hDC, hRC);
-
-	loadExtensions();
-}
-
-void replica_start() {
 	MSG msg;
 	for(;;) {
 		while(PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
@@ -524,4 +515,9 @@ void replica_start() {
 		}
 		SwapBuffers(hDC);
 	}
+}
+
+void requestAnimationFrame(void(*func)()) {
+	requestAnimationFrameFunc = func;
+	startMainLoop();
 }

@@ -83,7 +83,7 @@ const render = () => {
 	matrixProjection.ortho(0, canvas.clientWidth, canvas.clientHeight, 0, -1.0, 1.0)
 
 	matrixModelView.identity()
-	matrixModelView.translate(0, 0, 0)
+	matrixModelView.translate(20, 20, 0)
 
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	gl.useProgram(programInfo.program)
