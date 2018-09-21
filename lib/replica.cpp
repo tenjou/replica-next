@@ -467,12 +467,13 @@ struct HTMLCanvasElement {
 			exit(1);
 		}
 
-		RECT winRect = { 0, 0, 800, 600 };
+		RECT winRect = { 0, 0, this->clientWidth, this->clientHeight };
 		AdjustWindowRect(&winRect, WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE, FALSE);
 		hWnd = CreateWindowA("replica", "replica",
 			WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE,
 			CW_USEDEFAULT, CW_USEDEFAULT,
-			800, 600,
+			winRect.right - winRect.left,
+			winRect.bottom - winRect.top,
 			nullptr, nullptr, hInstance, nullptr);
 		if(!hWnd) {
 			fprintf(stderr, "Failed to create window");
