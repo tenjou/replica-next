@@ -21,4 +21,4 @@ Open http://localhost:8090 and in console compiled code(located in `data/index.j
 
 # License
 
-[MIT License][LICENSE.md]
+[MIT License](LICENSE.md)
