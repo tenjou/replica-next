@@ -4,7 +4,7 @@ Replica is in early stages for being both JavaScript static analsyer and native 
 # Why
 - Smaller executables and not reliant on WebView packages
 - More granular control for memory and performance
-- Ability to compile back to WASM and give potentially better minifying & uglifying options when recompiling back to JavaScript.
+- Ability to compile back to WASM and potentially better minifying & uglifying options when recompiling back to JavaScript.
 
 # Usage
 ```
