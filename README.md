@@ -1,5 +1,5 @@
 # Replica 0.1v
-Replica is in early stages for being both JavaScript static analyser and native compiler. Any code that is not statically written (no eval, no dynamic code loading) is not supported and will net compilation errors. Currently code is compiled to C++ and piggybacks on C++ compiler work.
+Replica is in early stages for being both JavaScript static analyser and native compiler. Any code that is not statically written (eval, dynamic code loading) is not supported and will net compilation errors. Currently code is compiled to C++ and piggybacks on C++ compiler work.
 
 # Why
 - Smaller executables and not reliant on WebView packages
