@@ -14,6 +14,7 @@ npm run dev
 Open http://localhost:8090 and in console compiled code(located in `data/index.js`) will be outputed out. Runtime library (replica.cpp) is located in `libs/replica.cpp`.
 
 # Next Milestone
+- Support more basic features
 - Texture loading & support
 - Input loading & support
 - CLI tools
