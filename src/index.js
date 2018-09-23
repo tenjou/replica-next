@@ -79,7 +79,7 @@ export default function main() {
 	const rootModule = new Module("", null)
 	Extern.declareStd(rootModule)
 	StaticAnalyser.setFetchMethod(fetchMethod)
-	fetchMethod(rootModule, rootModule, "data/index2.js")
+	fetchMethod(rootModule, rootModule, "data/index.js")
 		.then((module) => {
 			const output = CppCompiler.run(module, rootModule.scope)
 			console.log(output)

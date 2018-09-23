@@ -2,12 +2,12 @@ import Matrix4 from "./math/Matrix4"
 import basicVS from "./shaders/sprite.vertex.glsl"
 import basicFS from "./shaders/sprite.fragment.glsl"
 
+let matrixProjection = new Matrix4()
+let matrixModelView = new Matrix4()
 let canvas = null
 let gl = null
 let programInfo = null
 let positions = null
-let matrixProjection = new Matrix4()
-let matrixModelView = new Matrix4()
 
 const create = () => {
 	canvas = document.createElement("canvas")
@@ -16,11 +16,6 @@ const create = () => {
 		console.error("Unable to initialize WebGL. Your browser or machine may not support it.")
 		return
 	}
-	document.body.appendChild(canvas)
-	canvas.width = canvas.clientWidth
-	canvas.height = canvas.clientHeight
-	canvas.style.width = `${canvas.clientWidth}px`
-	canvas.style.height = `${canvas.clientHeight}px`
 
 	setupWebGL()
 	initShaderProgram(basicVS, basicFS)
@@ -71,27 +66,24 @@ const loadShader = (type, source) => {
 	return shader
 }
 
-const initBuffers = () => 
-{
+const initBuffers = () => {
 	const vertices = [
 		100.0, 100.0,
 		0.0, 100.0,
 		100.0, 0.0,
 		0.0, 0.0
 	]
-
 	positions = gl.createBuffer()
 	gl.bindBuffer(gl.ARRAY_BUFFER, positions)
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
 }
 
-const render = () => 
-{
+const render = () => {
 	matrixProjection.identity()
 	matrixProjection.ortho(0, canvas.clientWidth, canvas.clientHeight, 0, -1.0, 1.0)
 
 	matrixModelView.identity()
-	matrixModelView.translate(0, 0, 0)
+	matrixModelView.translate(20, 20, 0)
 
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	gl.useProgram(programInfo.program)
@@ -108,7 +100,5 @@ const render = () =>
 	requestAnimationFrame(render)
 }
 
-export default function main() {
-	create()
-	render()
-}
+create()
+render()
