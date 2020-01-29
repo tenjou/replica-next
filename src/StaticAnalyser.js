@@ -34,8 +34,14 @@ const run = (rootModule_, module, node) => {
 const parseImports = (nodes, scope) => {
 	for(let n = 0; n < nodes.length; n++) {
 		const node = nodes[n]
-		if(node.type !== "ImportDeclaration") { break }
-		parseImportDeclaration(node, scope)
+		switch(node.type) {
+			case "ImportDeclaration":
+				parseImportDeclaration(node, scope)
+				break
+			case "ExportNamedDeclaration":
+				parseExportNamedDeclaration(node)
+				break
+		}
 	}
 }
 
@@ -373,7 +379,9 @@ const parseExportDefaultDeclaration = (node) => {
 }
 
 const parseExportNamedDeclaration = (node) => {
-	console.log(node)
+	if(node.source) {
+		node.module = fetchMethod(rootModule, currentModule, node.source.value) 
+	}
 }
 
 const parseMethodDefinition = (node) => {

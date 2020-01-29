@@ -336,6 +336,7 @@ const parseExportNamedDeclaration = (node) => {
 	const specifiers = parseSpecifiers(node.specifiers)
 	const output = `export ${specifiers}`
 	if(node.source) {
+		parseModule(node.module)
 		const source = parse[node.source.type](node.source)
 		return `${output} from ${source}`
 	}
