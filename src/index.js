@@ -29,6 +29,7 @@ const fetchMethod = (rootModule, parentModule, importPath) => {
 			console.log(`ModuleNotFound: ${importPath}`)
 			return null
 		}
+		extName = ".js"
 	}
 	else {
 		if(!extName) {
@@ -48,7 +49,7 @@ const fetchMethod = (rootModule, parentModule, importPath) => {
 		console.log(`FileNotFound: ${fullPath}`)
 	}
 	const text = fs.readFileSync(fullPath, "utf8")
-	const baseName = path.basename(importPath)
+	const baseName = path.basename(fullPath)
 	scriptModule = new Module(fullPath, baseName, extName, nextModuleIndex++)
 	scriptModule.scope.parent = parentModule.scope
 	scriptModule.importedModules.push(parentModule)
@@ -95,7 +96,7 @@ const run = (file) => {
 	}
 	for(let moduleId in modulesLoaded) {
 		const fileModule = modulesLoaded[moduleId]
-		fs.writeFileSync(`${buildPath}/${fileModule.index}.${fileModule.name}`, fileModule.output, "utf8")
+		fs.writeFileSync(`${buildPath}/${fileModule.name}.${fileModule.index}${fileModule.ext}`, fileModule.output, "utf8")
 		WatcherService.watchModule(fileModule)
 	}
 }
