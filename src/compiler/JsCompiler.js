@@ -327,14 +327,18 @@ const parseExportDefaultDeclaration = (node) => {
 }
 
 const parseExportNamedDeclaration = (node) => {
-	const declaration = node.declaration ? parse[node.declaration.type](node.declaration) : null
-	if(declaration) {
+	if(node.declaration) {
+		const declaration = parse[node.declaration.type](node.declaration)
 		const output = `export ${declaration}`
 		return output
 	}
 
 	const specifiers = parseSpecifiers(node.specifiers)
 	const output = `export ${specifiers}`
+	if(node.source) {
+		const source = parse[node.source.type](node.source)
+		return `${output} from ${source}`
+	}
 	return output
 }
 
