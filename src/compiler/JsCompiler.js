@@ -83,6 +83,20 @@ const parseForInStatement = (node) => {
 	return output
 }
 
+const parseWhileStatement = (node) => {
+	const test = parse[node.test.type](node.test)
+	const body = parse[node.body.type](node.body)
+	const output = `while(${test}) ${body}`
+	return output
+}
+
+const parseWhileDoStatement = (node) => {
+	const test = parse[node.test.type](node.test)
+	const body = parse[node.body.type](node.body)
+	const output = `do ${body}\n${tabs}while(${test})`
+	return output
+}
+
 const parseIfStatement = (node) => {
 	const test = parse[node.test.type](node.test)
 	let output = `if(${test}) `
@@ -450,6 +464,8 @@ const parse = {
 	BreakStatement: parseBreakStatement,
 	ForStatement: parseForStatement,
 	ForInStatement: parseForInStatement,
+	WhileStatement: parseWhileStatement,
+	WhileDoStatement: parseWhileDoStatement,
 	ExpressionStatement: parseExpressionStatement,
 	IfStatement: parseIfStatement,
 	SwitchStatement: parseSwitchStatement,
