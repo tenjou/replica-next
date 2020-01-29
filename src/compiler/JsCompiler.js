@@ -1,9 +1,7 @@
 
-let scope = null
-let scopePrev = null
 let tabs = ""
 
-const run = (module, rootScopeSrc) => {
+const run = (module) => {
 	try {
 		parseModule(module)
 	}
@@ -329,6 +327,12 @@ const parseExportDefaultDeclaration = (node) => {
 }
 
 const parseExportNamedDeclaration = (node) => {
+	const declaration = node.declaration ? parse[node.declaration.type](node.declaration) : null
+	if(declaration) {
+		const output = `export ${declaration}`
+		return output
+	}
+
 	const specifiers = parseSpecifiers(node.specifiers)
 	const output = `export ${specifiers}`
 	return output
