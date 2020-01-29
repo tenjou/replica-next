@@ -259,13 +259,18 @@ const parseUpdateExpression = (node) => {
 
 const parseFunctionExpression = (node) => {
 	const params = parseArgs(node.params)
-	const output = `(${params})${parse[node.body.type](node.body)}`
+	const body = parse[node.body.type](node.body)
+	const output = `(${params}) ${body}`
 	return output
 }
 
 const parseArrowFunctionExpression = (node) => {
 	const params = parseArgs(node.params)
-	const output = `(${params}) => ${parse[node.body.type](node.body)}`
+	const body = parse[node.body.type](node.body)
+	const output = `(${params}) => ${body}`
+	if(node.async) {
+		return `async ${output}`
+	}
 	return output
 }
 
@@ -287,6 +292,12 @@ const parseObjectExpression = (node) => {
 	return output
 }
 
+const parseAwaitExpression = (node) => {
+	const arg = parse[node.argument.type](node.argument)
+	const output = `await ${arg}`
+	return output
+}
+
 const parseObjectProperty = (node) => {
 	const key = parse[node.key.type](node.key)
 	const value = parse[node.value.type](node.value)
@@ -303,17 +314,12 @@ const parseFunctionDeclaration = (node) => {
 }
 
 const parseClassDeclaration = (node) => {
-	const scopePrev = scope
-	scope = node.scope
-
 	const body = parse[node.body.type](node.body)
 	let output = `class ${node.id.name} `
 	if(node.superClass) {
 		output += `extends ${node.superClass.name} `
 	}
 	output += `${body}\n`
-
-	scope = scopePrev
 	return output
 }
 
@@ -355,7 +361,12 @@ const parseCatchClause = (node) => {
 }
 
 const parseMethodDefinition = (node) => {
-	const output = `${parse[node.key.type](node.key)}${parse[node.value.type](node.value)}`
+	const key = parse[node.key.type](node.key)
+	const value = parse[node.value.type](node.value)
+	const output = `${key}${value}`
+	if(node.value.async) {
+		return `async ${output}`
+	}
 	return output
 }
 
@@ -454,6 +465,7 @@ const parse = {
 	FunctionExpression: parseFunctionExpression,
 	ArrowFunctionExpression: parseArrowFunctionExpression,
 	ObjectExpression: parseObjectExpression,
+	AwaitExpression: parseAwaitExpression,
 	FunctionDeclaration: parseFunctionDeclaration,
 	ClassDeclaration: parseClassDeclaration,
 	ExportDefaultDeclaration: parseExportDefaultDeclaration,
