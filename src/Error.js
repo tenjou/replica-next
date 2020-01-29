@@ -15,4 +15,6 @@ const unknownType = () => {
     throw `UnknownTypeError: Expression should return valid type`
 }
 
-export { typeMismatch, reference, redefinition, unknownType }
+export default { 
+	typeMismatch, reference, redefinition, unknownType 
+}

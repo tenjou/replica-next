@@ -1,51 +1,46 @@
-import Scope from "./Scope"
-import Error from "./Error"
-import PrimitiveType from "./PrimitiveType"
-import TypeFlag from "./TypeFlag"
+import Scope from "./Scope.js"
+import Error from "./Error.js"
+import PrimitiveType from "./PrimitiveType.js"
+import TypeFlag from "./TypeFlag.js"
 
 let fetchMethod = null
 let rootModule = null
+let currentModule = null
 let topScope = null
-let module = null
-let scope = null
+let currentScope = null
 
 const globalContext = {
 	objectIndex: 0,
 	objectInline: false
 }
 
-const run = (rootModule_, module_, node) => {
+const run = (rootModule_, module, node) => {
+	const modulePrev = currentModule
+	const scopePrev = currentScope
+
 	rootModule = rootModule_
-	module = module_
-	return parseImports(node.body, module_.scope)
-		.then(() => {
-			rootModule = rootModule_
-			topScope = rootModule_.scope
-			module = module_
-			scope = module.scope
-			parseBody(node.body)
-		})
+	currentModule = module
+	
+	parseImports(node.body, currentModule.scope)
+
+	rootModule = rootModule_
+	topScope = rootModule_.scope
+
+	currentModule = modulePrev
+	currentScope = scopePrev
+	// parseBody(node.body)
 }
 
 const parseImports = (nodes, scope) => {
-	const promises = []
 	for(let n = 0; n < nodes.length; n++) {
 		const node = nodes[n]
 		if(node.type !== "ImportDeclaration") { break }
-		promises.push(parseImportDeclaration(node, scope))
+		parseImportDeclaration(node, scope)
 	}
-	return Promise.all(promises)
 }
 
 const parseImportDeclaration = (node, scope) => {
-	return fetchMethod(rootModule, module, node.source.value)
-		.then((importModule) => {
-			node.module = importModule 
-			const specifiers = node.specifiers
-			for(let n = 0; n < specifiers.length; n++) {
-				parseImportDefaultSpecifier(specifiers[n], scope, importModule)
-			}
-		})
+	node.module = fetchMethod(rootModule, currentModule, node.source.value) 
 }
 
 const parseImportDefaultSpecifier = (node, requestScope, importModule) => {
@@ -585,4 +580,6 @@ const setFetchMethod = (func) => {
 	fetchMethod = func
 }
 
-export { run, setFetchMethod }
+export default { 
+	run, setFetchMethod 
+}

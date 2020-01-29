@@ -1,6 +1,6 @@
-import Scope from "./Scope"
-import PrimitiveType from "./PrimitiveType"
-import TypeFlag from "./TypeFlag"
+import Scope from "./Scope.js"
+import PrimitiveType from "./PrimitiveType.js"
+import TypeFlag from "./TypeFlag.js"
 
 let noneType
 let unknownType
@@ -186,4 +186,4 @@ const declareStd = (module) => {
 	})
 }
 
-export { declareStd }
+export default { declareStd }

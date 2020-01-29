@@ -3,4 +3,6 @@ const run = (node) => {
 
 }
 
-export { run }
+export default { 
+	run 
+}

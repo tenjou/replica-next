@@ -4,13 +4,14 @@
 	"description": "",
 	"author": "Arturs Šefers",
 	"main": "src/index.js",
+	"type": "module",
 	"scripts": {
-		"build": "node_modules/.bin/build-replica src/index.js -i index.html -t -u",
-		"dev": "node_modules/.bin/build-replica src/index.js -i index.html -t -s 8090 8091 -si"
+		"dev": "node --experimental-json-modules src/index.js"
 	},
 	"keywords": [],
 	"license": "MIT",
 	"dependencies": {
+		"acorn": "^7.1.0",
 		"build-replica": "^0.2.59"
 	}
 }

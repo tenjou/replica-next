@@ -1,4 +1,4 @@
-import Matrix4 from "./math/Matrix4"
+import Matrix4 from "./math/Matrix4.js"
 import basicVS from "./shaders/sprite.vertex.glsl"
 import basicFS from "./shaders/sprite.fragment.glsl"
 

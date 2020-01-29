@@ -1,5 +1,5 @@
-import PrimitiveType from "../PrimitiveType"
-import TypeFlag from "../TypeFlag";
+import PrimitiveType from "../PrimitiveType.js"
+import TypeFlag from "../TypeFlag.js"
 
 let scope = null
 let rootScope = null
@@ -10,9 +10,9 @@ let declarationsOutput = ""
 let outerOutput = ""
 let globalVars = ""
 
-const run = (module, rootScope_) => {
+const run = (module, rootScopeSrc) => {
 	scope = module.scope
-	rootScope = rootScope_
+	rootScope = rootScopeSrc
 
 	const includes = `#include "replica.cpp"\n\n`
 	let output = "int main() {\n"
@@ -98,7 +98,7 @@ const parseExpressionStatement = (node) => {
 	return parse[node.expression.type](node.expression)
 }
 
-const parseIfStatement = (node, head = true) => {
+const parseIfStatement = (node) => {
 	let output = `if(${parse[node.test.type](node.test)}) `
 	output += parse[node.consequent.type](node.consequent)
 	if(node.alternate) {
@@ -511,4 +511,6 @@ const parse = {
 	MethodDefinition: parseMethodDefinition
 }
 
-export { run }
+export default { 
+	run 
+}
