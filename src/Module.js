@@ -11,6 +11,7 @@ class Module {
 		this.tNeedImportUpdate = -1
 		this.index = -1
 		this.scope = new Scope()
+		this.watcher = null
 	}
 }
 

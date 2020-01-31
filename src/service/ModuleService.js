@@ -3,6 +3,7 @@ import path from "path"
 import acorn from "acorn"
 import Module from "../Module.js"
 import WatcherService from "./WatcherService.js"
+import LoggerService from "./LoggerService.js"
 
 const modules = {}
 const modulesLoaded = {}
@@ -28,7 +29,7 @@ const add = (modulePath, moduleName) => {
 	modules[moduleName] = moduleFilePath
 }
 
-const fetchModule = (importPath, parentModule = null) => {
+const loadModule = (importPath, parentModule = null) => {
 	if(!parentModule) {
 		parentModule = rootModule
 	}
@@ -64,6 +65,7 @@ const fetchModule = (importPath, parentModule = null) => {
 
 	if(!fs.existsSync(fullPath)) {
 		console.log(`FileNotFound: ${fullPath}`)
+		return null
 	}
 
 	const baseName = path.basename(fullPath)
@@ -76,7 +78,16 @@ const fetchModule = (importPath, parentModule = null) => {
 
 	WatcherService.watchModule(scriptModule)
 
+	LoggerService.logYellow("Load", scriptModule.path)
+
 	return scriptModule
+}
+
+const unloadModule = (module) => {
+	delete modulesLoaded[module.path]
+	WatcherService.unwatchModule(module)
+
+	LoggerService.logGreen("Unload", module.path)
 }
 
 const updateModule = (module) => {
@@ -120,6 +131,13 @@ const getModulesBuffer = () => {
 		modulesImportedPrev = tmpBuffer
 	
 		indexImports(entryModule)
+
+		for(let n = 0; n < modulesImportedPrev.length; n++) {
+			const module = modulesImportedPrev[n]
+			if(modulesImported.indexOf(module) === -1) {
+				unloadModule(module)
+			}
+		}
 	}
 
 	return modulesImported
@@ -130,5 +148,5 @@ const setEntryModule = (module) => {
 }
 
 export default {
-	add, fetchModule, updateModule, getModulesBuffer, setEntryModule
+	add, fetchModule: loadModule, updateModule, getModulesBuffer, setEntryModule
 }

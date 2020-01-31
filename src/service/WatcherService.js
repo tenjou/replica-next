@@ -1,7 +1,6 @@
 import fs from "fs"
 
 const filesWatching = {}
-const modulesWatching = {}
 let funcListener = null
 
 const watchFile = (file) => {
@@ -24,22 +23,21 @@ const unwatchFile = (file) => {
 }
 
 const watchModule = (module) => {
-	if(modulesWatching[module.path]) {
+	if(module.watcher) {
 		return
 	}
-	fs.watch(module.path, { encoding: "utf8" }, (eventType, filename) => {
+	module.watcher = fs.watch(module.path, { encoding: "utf8" }, (eventType, filename) => {
 		if(filename) {
 			handleWatcherEvent(eventType, module)
 		}
 	})
-	modulesWatching[module.path] = true
 }
 
 const unwatchModule = (module) => {
-	if(!modulesWatching[module.path]) {
+	if(!module.watcher) {
 		return
 	}
-	fs.unwatch(module.path)
+	module.watcher.close()
 }
 
 const handleWatcherEvent = (eventType, file) => {
