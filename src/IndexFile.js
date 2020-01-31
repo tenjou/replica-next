@@ -7,7 +7,7 @@ const prefixStart = "<!-- REPLICA_START -->"
 const prefixEnd = "<!-- REPLICA_END -->"
 
 class IndexFile {
-	constructor(fullPath) {
+	constructor(fullPath, targetPath) {
 		this.contentStart = null
 		this.contentEnd = null
 		this._content = null
@@ -15,6 +15,7 @@ class IndexFile {
 		this.loaded = false
 
 		this.fullPath = fullPath
+		this.targetPath = targetPath
 		this.timestamp = ""
 
 		this.update()
@@ -82,7 +83,7 @@ class IndexFile {
 		content += this.contentEnd
 		this.updating = true
 
-		fs.writeFileSync(this.fullPath, content, "utf8")
+		fs.writeFileSync(this.targetPath, content, "utf8")
 	}
 
 	set content(content) {

@@ -53,6 +53,11 @@ const run = (file) => {
 		fs.writeFileSync(`${buildPath}/${fileModule.name}.${fileModule.index}${fileModule.ext}`, fileModule.output, "utf8")
 	}
 
+	for(let fullPath in indexFiles) {
+		const file = indexFiles[fullPath]
+		file.updateScripts()
+		WatcherService.watchFile(file)
+	}
 	WatcherService.setListener(handleWatcherChange)
 
 	setInterval(update, 100)
@@ -96,24 +101,24 @@ const handleWatcherChange = (eventType, instance) => {
 	}
 } 
 
-const addIndex = (src) => {
-	const fileExist = fs.existsSync(src)
+const addIndex = (srcPath, targetPath = null) => {
+	const fileExist = fs.existsSync(srcPath)
 	if(!fileExist) {
-		return console.warn("\x1b[91m", "No such index file found at: " + src, "\x1b[0m");
+		return console.warn("\x1b[91m", "No such index file found at: " + srcPath, "\x1b[0m");
 	}
 
-	const slash = path.normalize("/")
-	const absoluteSrc = path.resolve(src)
-	const index = absoluteSrc.lastIndexOf(slash)
-	const filename = absoluteSrc.slice(index + 1)
-
-	const content = fs.readFileSync(absoluteSrc)
-	const fullPath = absoluteSrc.slice(0, index + 1) + filename
-	const indexFile = new IndexFile(fullPath, content)
-	indexFiles[absoluteSrc] = indexFile
+	srcPath = path.resolve(srcPath)
+	if(!targetPath) {
+		targetPath = srcPath
+	}
+	else {
+		targetPath = path.resolve(targetPath)
+	}
 	
-	WatcherService.watchFile(indexFile)
-	LoggerService.logGreen("IndexFile", absoluteSrc)
+	const indexFile = new IndexFile(srcPath, targetPath)
+	indexFiles[srcPath] = indexFile
+
+	LoggerService.logGreen("IndexFile", srcPath)
 }
 
 const setBuildDir = (path) => {
@@ -133,10 +138,10 @@ const printVersion = () => {
 }
 
 try {
-	process.argv = [ 'C:\\Program Files\\nodejs\\node.exe',
-		'C:\\workspace\\projects\\meta\\replica\\src\\replica.js',
+	process.argv = [ '',
+		'',
 		'../meta-cms/src/index.js',
-		'-i', '../meta-cms/index.html', 
+		'-i', '../meta-cms/index.html', '../meta-cms/index2.html', 
 		"-m", "../../libs/wabi",
 		"-u"
 	]	
@@ -144,7 +149,7 @@ try {
 	CliService.setName(packageData.name)
 		.setVersion(packageData.version)
 		.setDescription(packageData.description)
-		.addOption("-i, --index <file>", "Add output index file", addIndex)
+		.addOption("-i, --index <src> [target]", "Add output index file", addIndex)
 		.addOption("-t, --timestamp", "Add timestamps to output files")
 		.addOption("-w, --watch", "Look after file changes in set input folders")
 		.addOption("-u, --uglify", "Specify that concatenated file should be minified, activates --concat")
