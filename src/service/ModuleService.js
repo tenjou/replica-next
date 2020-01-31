@@ -8,7 +8,6 @@ const modules = {}
 const modulesLoaded = {}
 const modulesBuffer = []
 const rootModule = new Module("", null)
-let nextModuleIndex = 0
 let needModuleSort = false
 
 const sortModules = (a, b) => {
@@ -62,6 +61,7 @@ const fetchModule = (importPath, parentModule = null) => {
 
 	let scriptModule = modulesLoaded[fullPath]
 	if(scriptModule) {
+		parentModule.importedModules.push(scriptModule)
 		return scriptModule
 	}
 
@@ -72,7 +72,7 @@ const fetchModule = (importPath, parentModule = null) => {
 	const baseName = path.basename(fullPath)
 	scriptModule = new Module(fullPath, baseName, extName)
 	scriptModule.scope.parent = parentModule.scope
-	scriptModule.importedModules.push(parentModule)
+	parentModule.importedModules.push(scriptModule)
 	modulesLoaded[fullPath] = scriptModule
 
 	switch(extName) {
@@ -95,8 +95,27 @@ const fetchModule = (importPath, parentModule = null) => {
 	return scriptModule
 }
 
+const indexImports = (module, moduleIndex) => {
+	for(let n = 0; n < module.importedModules.length; n++) {
+		const importedModule = module.importedModules[n]
+		if(importedModule.index === -1) {
+			moduleIndex = indexImports(importedModule, moduleIndex)
+		}
+	}
+	module.index = moduleIndex++
+	return moduleIndex
+}
+
 const getModulesBuffer = () => {
 	if(needModuleSort) {
+		for(let n = 0; n < modulesBuffer.length; n++) {
+			const module = modulesBuffer[n]
+			module.index = -1
+		}
+
+		const entryModule = modulesBuffer[0]
+		indexImports(entryModule, 0)
+
 		modulesBuffer.sort(sortModules)
 		needModuleSort = false
 	}

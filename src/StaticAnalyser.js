@@ -18,6 +18,7 @@ const run = (module) => {
 	const scopePrev = currentScope
 
 	currentModule = module
+	currentModule.importedModules.length = 0
 	
 	parseImports(module.data.body, currentModule.scope)
 
