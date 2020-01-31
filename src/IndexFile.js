@@ -1,4 +1,5 @@
 import fs from "fs"
+import path from "path"
 import ModuleService from "./service/ModuleService.js"
 import CliService from "./service/CliService.js"
 
@@ -47,9 +48,10 @@ class IndexFile {
 		}
 		else {
 			const modules = ModuleService.getModulesBuffer()
+			const buildSrc = "./build"
 			const src = path.relative(this.fullPath, buildSrc) + path.normalize("/")
 
-			if(cli.flags.timestamp) {
+			if(CliService.flags.timestamp) {
 				let timestamp
 				for(let n = 0; n < modules.length; n++) {
 					const file = modules[n]
@@ -60,27 +62,18 @@ class IndexFile {
 					timestamp = "?" + Date.now()
 					content += `<script src="${src}${file.filename}.${file.id}.js${timestamp}"></script>\n`
 				}
-
-				if(entrySourceFile.blockNode) {
-					timestamp = "?" + Date.now()
-					content += `<script src="${src}${entrySourceFile.filename}.${entrySourceFile.id}.js${timestamp}"></script>\n`
-				}
 			}
 			else {
 				for(let n = 0; n < modules.length; n++) {
-					const file = modules[n]
-					if(!file.blockNode) { 
+					const module = modules[n]
+					if(!module.data) { 
 						continue 
 					}
-					content += `<script src="${src}${file.filename}.${file.id}.js"></script>\n`
-				}
-
-				if(entrySourceFile.blockNode) {
-					content += `<script src="${src}${entrySourceFile.filename}.${entrySourceFile.id}.js"></script>\n`
+					content += `<script src="${src}${module.name}.${module.index}.js"></script>\n`
 				}
 			}
 
-			if(cli.flags.server) {
+			if(CliService.flags.server) {
 				content += `<script>window.REPLICA_SERVER_PORT = ${server.getWsPort()};</script>\n`
 				content += `<script src="${src}replica.js"></script>\n`
 			}

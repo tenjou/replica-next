@@ -51,7 +51,6 @@ const run = (file) => {
 	for(let n = 0; n < modulesBuffer.length; n++) {
 		const fileModule = modulesBuffer[n]
 		fs.writeFileSync(`${buildPath}/${fileModule.name}.${fileModule.index}${fileModule.ext}`, fileModule.output, "utf8")
-		WatcherService.watchModule(fileModule)
 	}
 
 	WatcherService.setListener(handleWatcherChange)
@@ -72,7 +71,7 @@ const update = () => {
 	if(needUpdateModules) {
 		for(let fullPath in modulesChanged) {
 			const module = modulesChanged[fullPath]
-			ModuleService.update(module)
+			ModuleService.compile(module)
 		}
 		for(let fullPath in indexFiles) {
 			const file = indexFiles[fullPath]
@@ -86,7 +85,7 @@ const handleWatcherChange = (eventType, instance) => {
 	switch(eventType) {
 		case "change": {
 			if(instance instanceof Module) {
-				modulesChanged[instance.path] = module
+				modulesChanged[instance.path] = instance
 				needUpdateModules = true
 			}
 			else if(instance instanceof IndexFile) {

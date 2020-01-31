@@ -2,6 +2,7 @@ import fs from "fs"
 import path from "path"
 import acorn from "acorn"
 import Module from "../Module.js"
+import WatcherService from "./WatcherService.js"
 
 const modules = {}
 const modulesLoaded = {}
@@ -87,9 +88,8 @@ const fetchModule = (importPath, parentModule = null) => {
 			break
 	}
 
-	scriptModule.index = nextModuleIndex++
-
 	modulesBuffer.push(scriptModule)
+	WatcherService.watchModule(scriptModule)
 	needModuleSort = true
 
 	return scriptModule
