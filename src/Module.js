@@ -5,9 +5,11 @@ class Module {
 		this.path = path
 		this.name = name
 		this.ext = ext
-		this.index = -1
 		this.data = null
 		this.importedModules = []
+		this.analysed = false
+		this.tNeedImportUpdate = -1
+		this.index = -1
 		this.scope = new Scope()
 	}
 }

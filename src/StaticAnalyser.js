@@ -19,6 +19,7 @@ const run = (module) => {
 
 	currentModule = module
 	currentModule.importedModules.length = 0
+	currentModule.analysed = true
 	
 	parseImports(module.data.body, currentModule.scope)
 
@@ -550,10 +551,12 @@ const defineVar = (name, node) => {
 
 const updateModule = (node, filePath) => {
 	node.module = ModuleService.fetchModule(filePath, currentModule) 
-	switch(node.module.ext) {
-		case ".js":
-			run(node.module) 
-			break
+	if(!node.module.analysed) {
+		switch(node.module.ext) {
+			case ".js":
+				run(node.module) 
+				break
+		}
 	}
 }
 

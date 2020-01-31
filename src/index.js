@@ -23,6 +23,7 @@ let needUpdateIndex = false
 
 const compile = (inputFile, options = {}) => {
 	const module = ModuleService.fetchModule(inputFile)
+	ModuleService.setEntryModule(module)
 	StaticAnalyser.run(module)
 
 	switch(options.compiler) {
@@ -76,7 +77,9 @@ const update = () => {
 	if(needUpdateModules) {
 		for(let fullPath in modulesChanged) {
 			const module = modulesChanged[fullPath]
-			ModuleService.compile(module)
+			ModuleService.updateModule(module)
+			StaticAnalyser.run(module)
+			LoggerService.logYellow("Update", module.path)
 		}
 		for(let fullPath in indexFiles) {
 			const file = indexFiles[fullPath]
@@ -114,7 +117,7 @@ const addIndex = (srcPath, targetPath = null) => {
 	else {
 		targetPath = path.resolve(targetPath)
 	}
-	
+
 	const indexFile = new IndexFile(srcPath, targetPath)
 	indexFiles[srcPath] = indexFile
 

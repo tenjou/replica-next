@@ -6,13 +6,12 @@ import WatcherService from "./WatcherService.js"
 
 const modules = {}
 const modulesLoaded = {}
-const modulesBuffer = []
 const rootModule = new Module("", null)
-let needModuleSort = false
-
-const sortModules = (a, b) => {
-	return a.index - b.index
-}
+let entryModule = null
+let modulesImported = []
+let modulesImportedPrev = []
+let tNeedImportUpdate = 0
+let tNeedImportUpdatePrev = -1
 
 const add = (modulePath, moduleName) => {
 	const fullPath = path.resolve("", modulePath)
@@ -27,10 +26,6 @@ const add = (modulePath, moduleName) => {
 	const moduleFilePath = `${fullPath}/${modulePackageData.main}`
 
 	modules[moduleName] = moduleFilePath
-}
-
-const compile = (module) => {
-
 }
 
 const fetchModule = (importPath, parentModule = null) => {
@@ -59,6 +54,8 @@ const fetchModule = (importPath, parentModule = null) => {
 		fullPath = path.resolve(parentFolderPath, importPath)	
 	}
 
+	tNeedImportUpdate = Date.now()
+
 	let scriptModule = modulesLoaded[fullPath]
 	if(scriptModule) {
 		parentModule.importedModules.push(scriptModule)
@@ -68,60 +65,70 @@ const fetchModule = (importPath, parentModule = null) => {
 	if(!fs.existsSync(fullPath)) {
 		console.log(`FileNotFound: ${fullPath}`)
 	}
-	const text = fs.readFileSync(fullPath, "utf8")
+
 	const baseName = path.basename(fullPath)
 	scriptModule = new Module(fullPath, baseName, extName)
 	scriptModule.scope.parent = parentModule.scope
 	parentModule.importedModules.push(scriptModule)
 	modulesLoaded[fullPath] = scriptModule
 
-	switch(extName) {
-		case ".js": {
-			const node = acorn.parse(text, { sourceType: "module" })
-			scriptModule.data = node
-			scriptModule.output = null
-		} break
+	updateModule(scriptModule)
 
-		default:
-			scriptModule.data = null
-			scriptModule.output = text
-			break
-	}
-
-	modulesBuffer.push(scriptModule)
 	WatcherService.watchModule(scriptModule)
-	needModuleSort = true
 
 	return scriptModule
 }
 
-const indexImports = (module, moduleIndex) => {
+const updateModule = (module) => {
+	const text = fs.readFileSync(module.path, "utf8")
+	switch(module.ext) {
+		case ".js": {
+			const node = acorn.parse(text, { sourceType: "module" })
+			module.data = node
+			module.output = null
+		} break
+
+		default:
+			module.data = null
+			module.output = text
+			break
+	}
+}
+
+const indexImports = (module, lastIndex = 0) => {
 	for(let n = 0; n < module.importedModules.length; n++) {
 		const importedModule = module.importedModules[n]
-		if(importedModule.index === -1) {
-			moduleIndex = indexImports(importedModule, moduleIndex)
+		if(importedModule.tImported !== tNeedImportUpdate) {
+			lastIndex = indexImports(importedModule, lastIndex)
 		}
 	}
-	module.index = moduleIndex++
-	return moduleIndex
+
+	module.index = lastIndex++
+	module.tImported = tNeedImportUpdate
+	modulesImported.push(module)
+
+	return lastIndex
 }
 
 const getModulesBuffer = () => {
-	if(needModuleSort) {
-		for(let n = 0; n < modulesBuffer.length; n++) {
-			const module = modulesBuffer[n]
-			module.index = -1
-		}
+	if(tNeedImportUpdate !== tNeedImportUpdatePrev) {
+		tNeedImportUpdatePrev = tNeedImportUpdate
 
-		const entryModule = modulesBuffer[0]
-		indexImports(entryModule, 0)
-
-		modulesBuffer.sort(sortModules)
-		needModuleSort = false
+		let tmpBuffer = modulesImported
+		modulesImported = modulesImportedPrev
+		modulesImported.length = 0
+		modulesImportedPrev = tmpBuffer
+	
+		indexImports(entryModule)
 	}
-	return modulesBuffer
+
+	return modulesImported
+}
+
+const setEntryModule = (module) => {
+	entryModule = module
 }
 
 export default {
-	add, compile, fetchModule, getModulesBuffer
+	add, fetchModule, updateModule, getModulesBuffer, setEntryModule
 }
