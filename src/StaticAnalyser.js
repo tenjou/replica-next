@@ -1,10 +1,9 @@
+import ModuleService from "./service/ModuleService.js"
 import Scope from "./Scope.js"
 import Error from "./Error.js"
 import PrimitiveType from "./PrimitiveType.js"
 import TypeFlag from "./TypeFlag.js"
 
-let fetchMethod = null
-let rootModule = null
 let currentModule = null
 let topScope = null
 let currentScope = null
@@ -14,17 +13,13 @@ const globalContext = {
 	objectInline: false
 }
 
-const run = (rootModule_, module, node) => {
+const run = (module) => {
 	const modulePrev = currentModule
 	const scopePrev = currentScope
 
-	rootModule = rootModule_
 	currentModule = module
 	
-	parseImports(node.body, currentModule.scope)
-
-	rootModule = rootModule_
-	topScope = rootModule_.scope
+	parseImports(module.data.body, currentModule.scope)
 
 	currentModule = modulePrev
 	currentScope = scopePrev
@@ -46,7 +41,7 @@ const parseImports = (nodes, scope) => {
 }
 
 const parseImportDeclaration = (node, scope) => {
-	node.module = fetchMethod(rootModule, currentModule, node.source.value) 
+	updateModule(node, node.source.value)
 }
 
 const parseImportDefaultSpecifier = (node, requestScope, importModule) => {
@@ -380,7 +375,7 @@ const parseExportDefaultDeclaration = (node) => {
 
 const parseExportNamedDeclaration = (node) => {
 	if(node.source) {
-		node.module = fetchMethod(rootModule, currentModule, node.source.value) 
+		updateModule(node, node.source.value)
 	}
 }
 
@@ -552,6 +547,15 @@ const defineVar = (name, node) => {
 	scope.vars[name] = node
 }
 
+const updateModule = (node, filePath) => {
+	node.module = ModuleService.fetchModule(filePath, currentModule) 
+	switch(node.module.ext) {
+		case ".js":
+			run(node.module) 
+			break
+	}
+}
+
 const parse = {
 	Body: parseBody,
 	ClassBody: parseClassBody,
@@ -584,10 +588,6 @@ const parse = {
 	MethodDefinition: parseMethodDefinition
 }
 
-const setFetchMethod = (func) => {
-	fetchMethod = func
-}
-
 export default { 
-	run, setFetchMethod 
+	run 
 }

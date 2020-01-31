@@ -254,11 +254,5 @@ class Context {
 	}
 }
 
-const create = () => {
-	const ctx = new Context()
-	return ctx
-}
-
-export default {
-	create
-}
+const context = new Context()
+export default context

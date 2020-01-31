@@ -6,7 +6,7 @@
 	"main": "src/index.js",
 	"type": "module",
 	"scripts": {
-		"dev": "node --experimental-json-modules src/index.js"
+		"dev": "node src/index.js"
 	},
 	"keywords": [],
 	"license": "MIT",

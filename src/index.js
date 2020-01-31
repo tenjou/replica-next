@@ -1,108 +1,120 @@
-import acorn from "acorn"
 import fs from "fs"
 import path from "path"
+import CppCompiler from "./compiler/CppCompiler.js"
+import JsCompiler from "./compiler/JsCompiler.js"
+import CliService from "./service/CliService.js"
+import LoggerService from "./service/LoggerService.js"
+import WatcherService from "./service/WatcherService.js"
+import ModuleService from "./service/ModuleService.js"
 import Module from "./Module.js"
 import StaticAnalyser from "./StaticAnalyser.js"
 import Optimizer from "./Optimizer.js"
 import Extern from "./Extern.js"
-import CppCompiler from "./compiler/CppCompiler.js"
-import JsCompiler from "./compiler/JsCompiler.js"
-import CliService from "./services/CliService.js"
-import WatcherService from "./services/WatcherService.js"
+import IndexFile from "./IndexFile.js"
 
 const packageData = JSON.parse(fs.readFileSync("./package.json"))
-const modules = {}
-const modulesLoaded = {}
-let nextModuleIndex = 0
+const modulesChanged = {}
+const indexFiles = {}
+const indexChanged = {}
+let needUpdateModules = false
+let needUpdateIndex = false
 
-const rootModule = new Module("", null)
 // Extern.declareStd(rootModule)
 
-const fetchMethod = (rootModule, parentModule, importPath) => {
-	let fullPath = null
-	let isLocal = (importPath.charAt(0) === ".")
-	let extName = path.extname(importPath)
-	
-	if(!isLocal && !extName) {
-		fullPath = modules[importPath]
-		if(!fullPath) {
-			console.log(`ModuleNotFound: ${importPath}`)
-			return null
-		}
-		extName = ".js"
-	}
-	else {
-		if(!extName) {
-			extName = ".js"
-			importPath += extName
-		}
-		const parentFolderPath = path.dirname(parentModule.path)
-		fullPath = path.resolve(parentFolderPath, importPath)	
-	}
-
-	let scriptModule = modulesLoaded[fullPath]
-	if(scriptModule) {
-		return scriptModule
-	}
-
-	if(!fs.existsSync(fullPath)) {
-		console.log(`FileNotFound: ${fullPath}`)
-	}
-	const text = fs.readFileSync(fullPath, "utf8")
-	const baseName = path.basename(fullPath)
-	scriptModule = new Module(fullPath, baseName, extName, nextModuleIndex++)
-	scriptModule.scope.parent = parentModule.scope
-	scriptModule.importedModules.push(parentModule)
-	modulesLoaded[fullPath] = scriptModule
-
-	switch(extName) {
-		case ".js": {
-			const node = acorn.parse(text, { sourceType: "module" })
-			scriptModule.data = node
-			StaticAnalyser.run(rootModule, scriptModule, node) 
-			Optimizer.run(node) 
-		} break
-
-		default:
-			scriptModule.data = null
-			scriptModule.output = text
-			break
-	}
-
-	return scriptModule
-}
-
 const compile = (inputFile, options = {}) => {
-	StaticAnalyser.setFetchMethod(fetchMethod)
+	const module = ModuleService.fetchModule(inputFile)
+	StaticAnalyser.run(module)
 
-	const module = fetchMethod(rootModule, rootModule, inputFile)
 	switch(options.compiler) {
 		case "cpp":
-			return CppCompiler.run(module, rootModule.scope)
+			CppCompiler.run(module)
+			break
 		case "js":
 		default:
-			return JsCompiler.run(module, rootModule.scope)
-	}	
+			JsCompiler.run(module)
+			break
+	}
 }
 
 const run = (file) => {
 	compile(file, {
-		output: "js"
+		output: "js",
+		custom: true
 	})
 
 	const buildPath = "./build"
 	if(!fs.existsSync(buildPath)) {
 		fs.mkdirSync(buildPath)
 	}
-	for(let moduleId in modulesLoaded) {
-		const fileModule = modulesLoaded[moduleId]
+
+	const modulesBuffer = ModuleService.getModulesBuffer()
+	for(let n = 0; n < modulesBuffer.length; n++) {
+		const fileModule = modulesBuffer[n]
 		fs.writeFileSync(`${buildPath}/${fileModule.name}.${fileModule.index}${fileModule.ext}`, fileModule.output, "utf8")
 		WatcherService.watchModule(fileModule)
 	}
+
+	WatcherService.setListener(handleWatcherChange)
+
+	setInterval(update, 100)
 }
 
+const update = () => {
+	if(needUpdateIndex) {
+		for(let fullPath in indexChanged) {
+			const file = indexChanged[fullPath]
+			file.update()
+			LoggerService.logYellow("Update", file.fullPath)
+		}
+		needUpdateIndex = false
+	}
+
+	if(needUpdateModules) {
+		for(let fullPath in modulesChanged) {
+			const module = modulesChanged[fullPath]
+			ModuleService.update(module)
+		}
+		for(let fullPath in indexFiles) {
+			const file = indexFiles[fullPath]
+			file.updateScripts()
+		}
+		needUpdateModules = false
+	}
+}
+
+const handleWatcherChange = (eventType, instance) => {
+	switch(eventType) {
+		case "change": {
+			if(instance instanceof Module) {
+				modulesChanged[instance.path] = module
+				needUpdateModules = true
+			}
+			else if(instance instanceof IndexFile) {
+				indexChanged[instance.fullPath] = instance
+				needUpdateIndex = true
+			}
+		} break
+	}
+} 
+
 const addIndex = (src) => {
-	console.log(src)
+	const fileExist = fs.existsSync(src)
+	if(!fileExist) {
+		return console.warn("\x1b[91m", "No such index file found at: " + src, "\x1b[0m");
+	}
+
+	const slash = path.normalize("/")
+	const absoluteSrc = path.resolve(src)
+	const index = absoluteSrc.lastIndexOf(slash)
+	const filename = absoluteSrc.slice(index + 1)
+
+	const content = fs.readFileSync(absoluteSrc)
+	const fullPath = absoluteSrc.slice(0, index + 1) + filename
+	const indexFile = new IndexFile(fullPath, content)
+	indexFiles[absoluteSrc] = indexFile
+	
+	WatcherService.watchFile(indexFile)
+	LoggerService.logGreen("IndexFile", absoluteSrc)
 }
 
 const setBuildDir = (path) => {
@@ -110,18 +122,7 @@ const setBuildDir = (path) => {
 }
 
 const addModule = (modulePath, moduleName = null) => {
-	const fullPath = path.resolve("", modulePath)
-	if(!fs.existsSync(fullPath)) {
-		console.log("ModuleNotFound")
-	}
-	const packagePath = path.resolve("", `${modulePath}/package.json`)
-	if(!moduleName) {
-		moduleName = path.basename(modulePath)
-	}
-	const modulePackageData = JSON.parse(fs.readFileSync(packagePath, "utf8"))
-	const moduleFilePath = `${fullPath}/${modulePackageData.main}`
-
-	modules[moduleName] = moduleFilePath
+	ModuleService.add(modulePath, moduleName)
 }
 
 const makeProject = (dir, template) => {
@@ -136,13 +137,12 @@ try {
 	process.argv = [ 'C:\\Program Files\\nodejs\\node.exe',
 		'C:\\workspace\\projects\\meta\\replica\\src\\replica.js',
 		'../meta-cms/src/index.js',
-		'-i', 'data/index.html', 
+		'-i', '../meta-cms/index.html', 
 		"-m", "../../libs/wabi",
 		"-u"
 	]	
 
-	const cli = CliService.create()
-	cli.setName(packageData.name)
+	CliService.setName(packageData.name)
 		.setVersion(packageData.version)
 		.setDescription(packageData.description)
 		.addOption("-i, --index <file>", "Add output index file", addIndex)
@@ -159,7 +159,7 @@ try {
 		.parse(process.argv, run)
 }
 catch(error) {
-
+	console.log(error)
 }
 
 process.on("unhandledRejection", error => {
