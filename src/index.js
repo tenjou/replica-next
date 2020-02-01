@@ -129,7 +129,7 @@ const setBuildDir = (path) => {
 }
 
 const addModule = (modulePath, moduleName = null) => {
-	ModuleService.add(modulePath, moduleName)
+	ModuleService.addCustomModule(modulePath, moduleName)
 }
 
 const makeProject = (dir, template) => {

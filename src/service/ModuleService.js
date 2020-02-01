@@ -8,16 +8,17 @@ import LoggerService from "./LoggerService.js"
 const modules = {}
 const modulesLoaded = {}
 const rootModule = new Module("", null)
+const nodeModulesPath = process.cwd() + "/node_modules/"
 let entryModule = null
 let modulesImported = []
 let modulesImportedPrev = []
 let tNeedImportUpdate = 0
 let tNeedImportUpdatePrev = -1
 
-const add = (modulePath, moduleName) => {
+const addCustomModule = (modulePath, moduleName) => {
 	const fullPath = path.resolve("", modulePath)
 	if(!fs.existsSync(fullPath)) {
-		console.log("ModuleNotFound")
+		throw `ModuleNotFound: ${fullPath}`
 	}
 	const packagePath = path.resolve("", `${modulePath}/package.json`)
 	if(!moduleName) {
@@ -41,9 +42,22 @@ const loadModule = (importPath, parentModule = null) => {
 	if(!isLocal && !extName) {
 		fullPath = modules[importPath]
 		if(!fullPath) {
-			console.log(`ModuleNotFound: ${importPath}`)
-			return null
+			fullPath = nodeModulesPath + importPath
+			if(!fullPath) {
+				throw `ModuleNotFound: ${importPath}`
+			}
+
+			const packagePath = path.resolve("", `${fullPath}/package.json`)
+			const modulePackageData = JSON.parse(fs.readFileSync(packagePath, "utf8"))
+			fullPath = `${fullPath}/${modulePackageData.main}`
+			modules[importPath] = fullPath			
 		}
+		else {
+			if(!fullPath) {
+				throw `ModuleNotFound: ${importPath}`
+			}
+		}
+
 		extName = ".js"
 	}
 	else {
@@ -148,5 +162,5 @@ const setEntryModule = (module) => {
 }
 
 export default {
-	add, fetchModule: loadModule, updateModule, getModulesBuffer, setEntryModule
+	addCustomModule, fetchModule: loadModule, updateModule, getModulesBuffer, setEntryModule
 }
