@@ -1,17 +1,35 @@
 {
 	"name": "replica-next",
-	"version": "0.1.1",
+	"version": "0.1.7",
 	"description": "Both JavaScript static analyser and native compiler.",
-	"author": "Arturs Šefers",
-	"main": "src/index.js",
+	"author": "Arturs Šefers <arthur.der.shefer@gmail.com>",
+	"main": "src/replica.js",
 	"type": "module",
-	"scripts": {
-		"dev": "node src/index.js"
+	"engines": {
+		"node": ">=13.7.0"
 	},
-	"keywords": [],
-	"license": "MIT",
+	"engineStrict": true,
 	"dependencies": {
 		"acorn": "^7.1.0",
-		"build-replica": "^0.2.59"
-	}
+		"uglify-es": "*",
+		"ws": ">=3.3.1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/tenjou/replica-next"
+	},
+	"bin": {
+		"replica-next": "./bin/replica-next"
+	},
+	"keywords": [
+		"build",
+		"include",
+		"minify",
+		"uglify",
+		"index",
+		"cpp",
+		"native"
+	],
+	"preferGlobal": true,
+	"license": "MIT"
 }

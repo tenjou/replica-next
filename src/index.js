@@ -1,5 +1,7 @@
 import fs from "fs"
 import path from "path"
+import url from "url"
+import child_process from "child_process"
 import CppCompiler from "./compiler/CppCompiler.js"
 import JsCompiler from "./compiler/JsCompiler.js"
 import CliService from "./service/CliService.js"
@@ -11,9 +13,13 @@ import StaticAnalyser from "./StaticAnalyser.js"
 import Optimizer from "./Optimizer.js"
 import Extern from "./Extern.js"
 import IndexFile from "./IndexFile.js"
-import Utils from "./Utils"
+import Utils from "./Utils.js"
 
-const packageData = JSON.parse(fs.readFileSync("./package.json"))
+const __filename = url.fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const packagePath = path.resolve(__dirname, "../package.json")
+const packageData = JSON.parse(fs.readFileSync(packagePath))
+
 const modulesChanged = {}
 const indexFiles = {}
 const indexChanged = {}
@@ -138,26 +144,27 @@ const makeProject = (dir, template) => {
 
 	const exists = fs.existsSync(dir)
 	if(exists) {
-		return utils.logError("Make", `Directory is not empty: ${dir}`)
+		return LoggerService.logError("Make", `Directory is not empty: ${dir}`)
 	}
 
-	const templatePath = path.normalize(`${__dirname}/../templates/${template}`)
+	const templatePath = path.resolve(__dirname, `../template/${template}`)
 	const templateExists = fs.existsSync(templatePath)
+	console.log(templatePath)
 	if(!templateExists) {
-		return utils.logError("Make", `Requested template does not exists: ${template}`)
+		return LoggerService.logError("Make", `Requested template does not exists: ${template}`)
 	}
 
 	fs.mkdirSync(dir)
 
 	Utils.copyFiles(dir, templatePath, () => {
 		console.log("Installing dependencies...\n")
-		exec(`cd ${dir} && npm i`, (error, stdout, stderr) => {
+		child_process.exec(`cd ${dir} && npm i`, (error, stdout, stderr) => {
 			if(error) {
 				console.error(error)
 			}
 			else {
 				console.log(stdout)
-				utils.logGreen("Ready")
+				LoggerService.logGreen("Ready")
 			}
 		})
 	})

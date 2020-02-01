@@ -1,3 +1,6 @@
+import path from "path"
+import os from "os"
+import child_process from "child_process"
 
 const escapeLiteral = (str) => {
 	return str.replace(/\n/g, "\\n")
@@ -21,7 +24,7 @@ const copyFiles = (targetDir, srcDir, onDone, silent) => {
 			break	
 	}
 
-	exec(cmd, (error, stdout, stderr) => {
+	child_process.exec(cmd, (error, stdout, stderr) => {
 		if(error) {
 			console.error(error)
 		}
