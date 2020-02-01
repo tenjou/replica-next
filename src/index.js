@@ -11,6 +11,7 @@ import StaticAnalyser from "./StaticAnalyser.js"
 import Optimizer from "./Optimizer.js"
 import Extern from "./Extern.js"
 import IndexFile from "./IndexFile.js"
+import Utils from "./Utils"
 
 const packageData = JSON.parse(fs.readFileSync("./package.json"))
 const modulesChanged = {}
@@ -133,7 +134,33 @@ const addModule = (modulePath, moduleName = null) => {
 }
 
 const makeProject = (dir, template) => {
+	template = template || "default"
 
+	const exists = fs.existsSync(dir)
+	if(exists) {
+		return utils.logError("Make", `Directory is not empty: ${dir}`)
+	}
+
+	const templatePath = path.normalize(`${__dirname}/../templates/${template}`)
+	const templateExists = fs.existsSync(templatePath)
+	if(!templateExists) {
+		return utils.logError("Make", `Requested template does not exists: ${template}`)
+	}
+
+	fs.mkdirSync(dir)
+
+	Utils.copyFiles(dir, templatePath, () => {
+		console.log("Installing dependencies...\n")
+		exec(`cd ${dir} && npm i`, (error, stdout, stderr) => {
+			if(error) {
+				console.error(error)
+			}
+			else {
+				console.log(stdout)
+				utils.logGreen("Ready")
+			}
+		})
+	})
 }
 
 const printVersion = () => {
@@ -141,13 +168,13 @@ const printVersion = () => {
 }
 
 try {
-	process.argv = [ '',
-		'',
-		'../meta-cms/src/index.js',
-		'-i', '../meta-cms/index.html', '../meta-cms/index2.html', 
-		"-m", "../../libs/wabi",
-		"-u"
-	]	
+	// process.argv = [ '',
+	// 	'',
+	// 	'../meta-cms/src/index.js',
+	// 	'-i', '../meta-cms/index.html', '../meta-cms/index2.html', 
+	// 	"-m", "../../libs/wabi",
+	// 	"-u"
+	// ]	
 
 	CliService.setName(packageData.name)
 		.setVersion(packageData.version)

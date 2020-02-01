@@ -1,7 +1,7 @@
 {
 	"name": "replica-next",
-	"version": "0.1.0",
-	"description": "",
+	"version": "0.1.1",
+	"description": "Both JavaScript static analyser and native compiler.",
 	"author": "Arturs Šefers",
 	"main": "src/index.js",
 	"type": "module",
