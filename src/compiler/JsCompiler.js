@@ -363,7 +363,7 @@ const parseImportDeclaration = (node) => {
 	}
 	const specifiersOutput = parseSpecifiers(node.specifiers)
 	const output = `import ${specifiersOutput} from ${node.source.raw}`
-	if(!node.module.output) {
+	if(node.module && !node.module.output) {
 		parseModule(node.module)
 	}
 	return output

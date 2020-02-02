@@ -13,6 +13,7 @@ import StaticAnalyser from "./StaticAnalyser.js"
 import Optimizer from "./Optimizer.js"
 import Extern from "./Extern.js"
 import IndexFile from "./IndexFile.js"
+import Server from "./Server.js"
 import Utils from "./Utils.js"
 
 const __filename = url.fileURLToPath(import.meta.url)
@@ -24,7 +25,7 @@ const modulesChanged = {}
 const indexFiles = {}
 const indexChanged = {}
 let needUpdateModules = false
-let needUpdateIndex = false
+let needUpdateIndex = true
 
 // Extern.declareStd(rootModule)
 
@@ -44,7 +45,7 @@ const compile = (inputFile, options = {}) => {
 	}
 }
 
-const run = (file) => {
+const run = async (file) => {
 	compile(file, {
 		output: "js",
 		custom: true
@@ -63,15 +64,36 @@ const run = (file) => {
 
 	for(let fullPath in indexFiles) {
 		const file = indexFiles[fullPath]
-		file.updateScripts()
 		WatcherService.watchFile(file)
 	}
 	WatcherService.setListener(handleWatcherChange)
 
-	setInterval(update, 100)
+	if(CliService.flags.server) {
+		CliService.flags.watch = CliService.flags.watch || {}
+		await Server.start(CliService.flags.server.httpPort, CliService.flags.server.wsPort)
+		start()
+	}
+	else {
+		start()
+	}
+}
+
+const start = () => {
+	if(CliService.flags.uglify) {
+		CliService.flags.concat = {}
+	}
+
+	if(CliService.flags.watch) {
+		setInterval(update, 100)
+	}
+	else {
+		update()
+	}
 }
 
 const update = () => {
+	const contentUpdated = (needUpdateIndex || needUpdateModules)
+
 	if(needUpdateIndex) {
 		for(let fullPath in indexChanged) {
 			const file = indexChanged[fullPath]
@@ -88,11 +110,17 @@ const update = () => {
 			StaticAnalyser.run(module)
 			LoggerService.logYellow("Update", module.path)
 		}
+		needUpdateModules = false
+	}
+
+	if(contentUpdated) {
 		for(let fullPath in indexFiles) {
 			const file = indexFiles[fullPath]
 			file.updateScripts()
 		}
-		needUpdateModules = false
+		if(CliService.flags.server) {
+			Server.reload()
+		}
 	}
 }
 
@@ -174,13 +202,13 @@ const printVersion = () => {
 }
 
 try {
-	// process.argv = [ '',
-	// 	'',
-	// 	'../test-next/src/index.js',
-	// 	'-i', '../test-next/_index.html', '../test-next/index.html', 
-	// 	"-m", "../../libs/wabi",
-	// 	"-u"
-	// ]	
+	process.argv = [ '',
+		'',
+		'../test-next/src/index.js',
+		'-i', '../test-next/_index.html', '../test-next/index.html', 
+		"-m", "../../libs/wabi",
+		"-s", "8060", "8061"
+	]	
 
 	CliService.setName(packageData.name)
 		.setVersion(packageData.version)
@@ -193,7 +221,6 @@ try {
 		.addOption("-s, --server [httpPort] [wsPort]", "Launch development server, activates --watch")
 		.addOption("-b, --build <dir>", "Specify build directory", setBuildDir)
 		.addOption("-m, --module <dir> [name]", "Add custom module", addModule)
-		.addOption("-si, --silent", "Silent mode")
 		.addCommand("make <dir> [template]", "Create and prepare an empty project", makeProject)
 		.addCommand("v", "\t\tPrints current version", printVersion)
 		.parse(process.argv, run)

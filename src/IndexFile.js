@@ -2,6 +2,7 @@ import fs from "fs"
 import path from "path"
 import ModuleService from "./service/ModuleService.js"
 import CliService from "./service/CliService.js"
+import Server from "./Server.js"
 
 const prefixStart = "<!-- REPLICA_START -->"
 const prefixEnd = "<!-- REPLICA_END -->"
@@ -34,47 +35,53 @@ class IndexFile {
 
 		if(CliService.flags.concat) {
 			let timestamp = ""
-			if(cli.flags.timestamp) {
+			if(CliService.flags.timestamp) {
 				timestamp = "?" + Date.now()
 			}
 
 			const src = path.relative(this.fullPath + "/", packageSrc)
 			content += `<script src="${src}${timestamp}"></script>\n`
-
-			// if(cli.flags.server) {
-			// 	const src = path.relative(this.fullPath, buildSrc) + path.normalize("/")
-			// 	// content += `<script>window.REPLICA_SERVER_PORT = ${server.getHttpPort()};</script>\n`
-			// 	content += `<script src="${src}replica.js"></script>\n`
-			// }
 		}
 		else {
 			const modules = ModuleService.getModulesBuffer()
 			const buildSrc = "./build"
 			const src = path.relative(this.fullPath, buildSrc) + path.normalize("/")
 
-			if(CliService.flags.timestamp) {
-				for(let n = 0; n < modules.length; n++) {
-					const module = modules[n]
-					if(!module.data) { 
-						continue 
-					}
-					content += `<script src="${src}${module.name}.${module.index}.js?${Date.now()}"></script>\n`
+			if(!CliService.flags.custom) {
+				const module = ModuleService.getEntryModule()
+
+				if(CliService.flags.timestamp) {
+					content += `<script type="module" src="${src}${module.name}.${module.index}.js?${Date.now()}"></script>\n`
+				}
+				else {
+					content += `<script type="module" src="${src}${module.name}.${module.index}.js"></script>\n`
 				}
 			}
 			else {
-				for(let n = 0; n < modules.length; n++) {
-					const module = modules[n]
-					if(!module.data) { 
-						continue 
+				if(CliService.flags.timestamp) {
+					for(let n = 0; n < modules.length; n++) {
+						const module = modules[n]
+						if(!module.data) { 
+							continue 
+						}
+						content += `<script src="${src}${module.name}.${module.index}.js?${Date.now()}"></script>\n`
 					}
-					content += `<script src="${src}${module.name}.${module.index}.js"></script>\n`
+				}
+				else {
+					for(let n = 0; n < modules.length; n++) {
+						const module = modules[n]
+						if(!module.data) { 
+							continue 
+						}
+						content += `<script src="${src}${module.name}.${module.index}.js"></script>\n`
+					}
 				}
 			}
+		}
 
-			// if(CliService.flags.server) {
-			// 	content += `<script>window.REPLICA_SERVER_PORT = ${server.getWsPort()};</script>\n`
-			// 	content += `<script src="${src}replica.js"></script>\n`
-			// }
+		if(CliService.flags.server) {
+			content += `<script>window.REPLICA_SERVER_PORT = ${Server.getWsPort()}</script>\n`
+			// content += `<script src="${src}replica.js"></script>\n`
 		}
 
 		content += this.contentEnd

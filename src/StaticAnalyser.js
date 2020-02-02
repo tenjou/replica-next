@@ -550,7 +550,10 @@ const defineVar = (name, node) => {
 }
 
 const updateModule = (node, filePath) => {
-	node.module = ModuleService.fetchModule(filePath, currentModule) 
+	node.module = ModuleService.fetchModule(filePath, currentModule)
+	if(!node.module) {
+		return
+	}
 	if(!node.module.analysed) {
 		switch(node.module.ext) {
 			case ".js":

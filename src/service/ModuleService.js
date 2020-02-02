@@ -78,7 +78,7 @@ const loadModule = (importPath, parentModule = null) => {
 	}
 
 	if(!fs.existsSync(fullPath)) {
-		console.log(`FileNotFound: ${fullPath}`)
+		LoggerService.logError("ModuleNotFound", fullPath)
 		return null
 	}
 
@@ -161,6 +161,11 @@ const setEntryModule = (module) => {
 	entryModule = module
 }
 
+const getEntryModule = () => {
+	return entryModule
+}
+
 export default {
-	addCustomModule, fetchModule: loadModule, updateModule, getModulesBuffer, setEntryModule
+	addCustomModule, fetchModule: loadModule, updateModule, getModulesBuffer, 
+	setEntryModule, getEntryModule
 }
