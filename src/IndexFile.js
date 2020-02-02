@@ -41,11 +41,11 @@ class IndexFile {
 			const src = path.relative(this.fullPath + "/", packageSrc)
 			content += `<script src="${src}${timestamp}"></script>\n`
 
-			if(cli.flags.server) {
-				const src = path.relative(this.fullPath, buildSrc) + path.normalize("/")
-				// content += `<script>window.REPLICA_SERVER_PORT = ${server.getHttpPort()};</script>\n`
-				content += `<script src="${src}replica.js"></script>\n`
-			}
+			// if(cli.flags.server) {
+			// 	const src = path.relative(this.fullPath, buildSrc) + path.normalize("/")
+			// 	// content += `<script>window.REPLICA_SERVER_PORT = ${server.getHttpPort()};</script>\n`
+			// 	content += `<script src="${src}replica.js"></script>\n`
+			// }
 		}
 		else {
 			const modules = ModuleService.getModulesBuffer()
@@ -53,15 +53,12 @@ class IndexFile {
 			const src = path.relative(this.fullPath, buildSrc) + path.normalize("/")
 
 			if(CliService.flags.timestamp) {
-				let timestamp
 				for(let n = 0; n < modules.length; n++) {
-					const file = modules[n]
-					if(!file.blockNode) { 
+					const module = modules[n]
+					if(!module.data) { 
 						continue 
 					}
-
-					timestamp = "?" + Date.now()
-					content += `<script src="${src}${file.filename}.${file.id}.js${timestamp}"></script>\n`
+					content += `<script src="${src}${module.name}.${module.index}.js?${Date.now()}"></script>\n`
 				}
 			}
 			else {
@@ -74,10 +71,10 @@ class IndexFile {
 				}
 			}
 
-			if(CliService.flags.server) {
-				content += `<script>window.REPLICA_SERVER_PORT = ${server.getWsPort()};</script>\n`
-				content += `<script src="${src}replica.js"></script>\n`
-			}
+			// if(CliService.flags.server) {
+			// 	content += `<script>window.REPLICA_SERVER_PORT = ${server.getWsPort()};</script>\n`
+			// 	content += `<script src="${src}replica.js"></script>\n`
+			// }
 		}
 
 		content += this.contentEnd

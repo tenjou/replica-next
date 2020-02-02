@@ -114,7 +114,7 @@ const handleWatcherChange = (eventType, instance) => {
 const addIndex = (srcPath, targetPath = null) => {
 	const fileExist = fs.existsSync(srcPath)
 	if(!fileExist) {
-		return console.warn("\x1b[91m", "No such index file found at: " + srcPath, "\x1b[0m");
+		throw `No such index file found at: ${srcPath}`
 	}
 
 	srcPath = path.resolve(srcPath)
@@ -149,7 +149,6 @@ const makeProject = (dir, template) => {
 
 	const templatePath = path.resolve(__dirname, `../template/${template}`)
 	const templateExists = fs.existsSync(templatePath)
-	console.log(templatePath)
 	if(!templateExists) {
 		return LoggerService.logError("Make", `Requested template does not exists: ${template}`)
 	}
@@ -177,8 +176,8 @@ const printVersion = () => {
 try {
 	// process.argv = [ '',
 	// 	'',
-	// 	'../meta-cms/src/index.js',
-	// 	'-i', '../meta-cms/index.html', '../meta-cms/index2.html', 
+	// 	'../test-next/src/index.js',
+	// 	'-i', '../test-next/_index.html', '../test-next/index.html', 
 	// 	"-m", "../../libs/wabi",
 	// 	"-u"
 	// ]	
