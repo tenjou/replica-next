@@ -31,6 +31,7 @@ class IndexFile {
 			return
 		}
 
+		const buildPath = path.relative(this.targetPath, ModuleService.getBuildPath()) + path.normalize("/")
 		let content = this.contentStart
 
 		if(CliService.flags.concat) {
@@ -44,17 +45,15 @@ class IndexFile {
 		}
 		else {
 			const modules = ModuleService.getModulesBuffer()
-			const buildSrc = "./build"
-			const src = path.relative(this.fullPath, buildSrc) + path.normalize("/")
-
+			
 			if(!CliService.flags.custom) {
 				const module = ModuleService.getEntryModule()
 
 				if(CliService.flags.timestamp) {
-					content += `<script type="module" src="${src}${module.name}.${module.index}.js?${Date.now()}"></script>\n`
+					content += `<script type="module" src="${buildPath}${module.name}.${module.index}.js?${Date.now()}"></script>\n`
 				}
 				else {
-					content += `<script type="module" src="${src}${module.name}.${module.index}.js"></script>\n`
+					content += `<script type="module" src="${buildPath}${module.name}.${module.index}.js"></script>\n`
 				}
 			}
 			else {
@@ -64,7 +63,7 @@ class IndexFile {
 						if(!module.data) { 
 							continue 
 						}
-						content += `<script src="${src}${module.name}.${module.index}.js?${Date.now()}"></script>\n`
+						content += `<script src="${buildPath}${module.name}.${module.index}.js?${Date.now()}"></script>\n`
 					}
 				}
 				else {
@@ -73,7 +72,7 @@ class IndexFile {
 						if(!module.data) { 
 							continue 
 						}
-						content += `<script src="${src}${module.name}.${module.index}.js"></script>\n`
+						content += `<script src="${buildPath}${module.name}.${module.index}.js"></script>\n`
 					}
 				}
 			}
@@ -81,7 +80,7 @@ class IndexFile {
 
 		if(CliService.flags.server) {
 			content += `<script>window.REPLICA_SERVER_PORT = ${Server.getWsPort()}</script>\n`
-			// content += `<script src="${src}replica.js"></script>\n`
+			content += `<script src="${buildPath}replica_server.js"></script>\n`
 		}
 
 		content += this.contentEnd

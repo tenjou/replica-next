@@ -24,6 +24,7 @@ const packageData = JSON.parse(fs.readFileSync(packagePath))
 const modulesChanged = {}
 const indexFiles = {}
 const indexChanged = {}
+let defaultBuildPath = "build/"
 let needUpdateModules = false
 let needUpdateIndex = true
 
@@ -45,21 +46,26 @@ const compile = (inputFile, options = {}) => {
 	}
 }
 
+const resolveBuildPath = () => {
+	defaultBuildPath = path.resolve(defaultBuildPath) + path.normalize("/")
+	ModuleService.setBuildPath(defaultBuildPath)
+
+	Utils.removeDir(defaultBuildPath)
+	Utils.createRelativeDir(defaultBuildPath)
+	Utils.copyFiles(defaultBuildPath, path.normalize(__dirname + "/../lib/js"), null, true)
+}
+
 const run = async (file) => {
 	compile(file, {
-		output: "js",
-		custom: true
+		output: "js"
 	})
 
-	const buildPath = "./build"
-	if(!fs.existsSync(buildPath)) {
-		fs.mkdirSync(buildPath)
-	}
+	resolveBuildPath()
 
 	const modulesBuffer = ModuleService.getModulesBuffer()
 	for(let n = 0; n < modulesBuffer.length; n++) {
 		const fileModule = modulesBuffer[n]
-		fs.writeFileSync(`${buildPath}/${fileModule.name}.${fileModule.index}${fileModule.ext}`, fileModule.output, "utf8")
+		fs.writeFileSync(`${defaultBuildPath}/${fileModule.name}.${fileModule.index}${fileModule.ext}`, fileModule.output, "utf8")
 	}
 
 	for(let fullPath in indexFiles) {
@@ -207,7 +213,8 @@ try {
 		'../test-next/src/index.js',
 		'-i', '../test-next/_index.html', '../test-next/index.html', 
 		"-m", "../../libs/wabi",
-		"-s", "8060", "8061"
+		"-s", "8060", "8061",
+		"-t"
 	]	
 
 	CliService.setName(packageData.name)
