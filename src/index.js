@@ -25,8 +25,10 @@ const modulesChanged = {}
 const indexFiles = {}
 const indexChanged = {}
 let defaultBuildPath = "build/"
+let buildPath = defaultBuildPath
 let needUpdateModules = false
 let needUpdateIndex = true
+let compiler = null
 
 // Extern.declareStd(rootModule)
 
@@ -34,44 +36,48 @@ const compile = (inputFile, options = {}) => {
 	const module = ModuleService.fetchModule(inputFile)
 	ModuleService.setEntryModule(module)
 	StaticAnalyser.run(module)
-
-	switch(options.compiler) {
-		case "cpp":
-			CppCompiler.run(module)
-			break
-		case "js":
-		default:
-			JsCompiler.run(module)
-			break
-	}
+	compiler.run(module)
 }
 
 const resolveBuildPath = () => {
-	defaultBuildPath = path.resolve(defaultBuildPath) + path.normalize("/")
-	ModuleService.setBuildPath(defaultBuildPath)
+	buildPath = path.resolve(defaultBuildPath) + path.normalize("/")
+	ModuleService.setBuildPath(buildPath)
 
-	Utils.removeDir(defaultBuildPath)
-	Utils.createRelativeDir(defaultBuildPath)
-	Utils.copyFiles(defaultBuildPath, path.normalize(__dirname + "/../lib/js"), null, true)
+	Utils.removeDir(buildPath)
+	Utils.createRelativeDir(buildPath)
+	Utils.copyFiles(buildPath, path.normalize(__dirname + "/../lib/js"), null, true)
 }
 
 const run = async (file) => {
-	compile(file, {
+	const options = {
 		output: "js"
-	})
+	}
 
+	switch(options.compiler) {
+		case "cpp":
+			compiler = CppCompiler
+			break
+		case "js":
+		default:
+			compiler = JsCompiler
+			break
+	}
+
+	compile(file, options)
+	
 	resolveBuildPath()
 
 	const modulesBuffer = ModuleService.getModulesBuffer()
 	for(let n = 0; n < modulesBuffer.length; n++) {
 		const fileModule = modulesBuffer[n]
-		fs.writeFileSync(`${defaultBuildPath}/${fileModule.name}.${fileModule.index}${fileModule.ext}`, fileModule.output, "utf8")
+		fs.writeFileSync(`${buildPath}/${fileModule.name}.${fileModule.index}${fileModule.ext}`, fileModule.output, "utf8")
 	}
 
 	for(let fullPath in indexFiles) {
 		const file = indexFiles[fullPath]
 		WatcherService.watchFile(file)
 	}
+
 	WatcherService.setListener(handleWatcherChange)
 
 	if(CliService.flags.server) {
@@ -114,6 +120,8 @@ const update = () => {
 			const module = modulesChanged[fullPath]
 			ModuleService.updateModule(module)
 			StaticAnalyser.run(module)
+			compiler.run(module)
+			fs.writeFileSync(`${buildPath}/${module.name}.${module.index}${module.ext}`, module.output, "utf8")
 			LoggerService.logYellow("Update", module.path)
 		}
 		needUpdateModules = false
@@ -166,7 +174,7 @@ const addIndex = (srcPath, targetPath = null) => {
 }
 
 const setBuildDir = (path) => {
-
+	buildPath = path
 }
 
 const addModule = (modulePath, moduleName = null) => {
