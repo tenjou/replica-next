@@ -1,3 +1,5 @@
+import path from "path"
+import ModuleService from "../service/ModuleService.js"
 
 let tabs = ""
 
@@ -12,7 +14,19 @@ const run = (module) => {
 }
 
 const parseModule = (module) => {
-	module.output = parseBody(module.data.body)
+	if(!module.data) {
+		return ""
+	}
+
+	const relativePath = path.relative(module.path, ModuleService.getBuildPath()) + path.normalize("/") + module.name
+
+	module.output = `"use strict";\n\n`
+	module.output += `(() => {\n\n`
+
+	module.output += parseBody(module.data.body)
+
+	module.output += "\n})()\n\n"
+	module.output += `//# sourceURL=${relativePath}`
 }
 
 const parseBody = (buffer) => {
@@ -359,10 +373,12 @@ const parseExportNamedDeclaration = (node) => {
 
 const parseImportDeclaration = (node) => {
 	if(node.specifiers.length === 0) {
-		return `import ${node.source.raw}`
+		return ""
+		// return `import ${node.source.raw}`
 	}
 	const specifiersOutput = parseSpecifiers(node.specifiers)
-	const output = `import ${specifiersOutput} from ${node.source.raw}`
+	// const output = `import ${specifiersOutput} from ${node.source.raw}`
+	const output = `const ${specifiersOutput} = __modules[${node.module.index}]`
 	if(node.module && !node.module.output) {
 		parseModule(node.module)
 	}

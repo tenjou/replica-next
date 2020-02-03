@@ -35,45 +35,36 @@ class IndexFile {
 		let content = this.contentStart
 
 		if(CliService.flags.concat) {
-			let timestamp = ""
-			if(CliService.flags.timestamp) {
-				timestamp = "?" + Date.now()
-			}
+			const buildSrc = "build.js"
 
-			const src = path.relative(this.fullPath + "/", packageSrc)
-			content += `<script src="${src}${timestamp}"></script>\n`
+			if(CliService.flags.timestamp) {
+				content += `<script src="${buildPath}${buildSrc}?${Date.now()}"></script>\n`
+			}
+			else {
+				content += `<script src="${buildPath}${buildSrc}"></script>\n`
+			}
 		}
 		else {
 			const modules = ModuleService.getModulesBuffer()
-			
-			if(!CliService.flags.custom) {
-				const module = ModuleService.getEntryModule()
 
-				if(CliService.flags.timestamp) {
-					content += `<script type="module" src="${buildPath}${module.name}.${module.index}.js?${Date.now()}"></script>\n`
-				}
-				else {
-					content += `<script type="module" src="${buildPath}${module.name}.${module.index}.js"></script>\n`
+			content += `<script src="${buildPath}replica.js"></script>\n`
+			
+			if(CliService.flags.timestamp) {
+				for(let n = 0; n < modules.length; n++) {
+					const module = modules[n]
+					if(!module.data) { 
+						continue 
+					}
+					content += `<script src="${buildPath}${module.name}.${module.index}.js?${Date.now()}"></script>\n`
 				}
 			}
 			else {
-				if(CliService.flags.timestamp) {
-					for(let n = 0; n < modules.length; n++) {
-						const module = modules[n]
-						if(!module.data) { 
-							continue 
-						}
-						content += `<script src="${buildPath}${module.name}.${module.index}.js?${Date.now()}"></script>\n`
+				for(let n = 0; n < modules.length; n++) {
+					const module = modules[n]
+					if(!module.data) { 
+						continue 
 					}
-				}
-				else {
-					for(let n = 0; n < modules.length; n++) {
-						const module = modules[n]
-						if(!module.data) { 
-							continue 
-						}
-						content += `<script src="${buildPath}${module.name}.${module.index}.js"></script>\n`
-					}
+					content += `<script src="${buildPath}${module.name}.${module.index}.js"></script>\n`
 				}
 			}
 		}

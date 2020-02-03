@@ -8,7 +8,7 @@ class Module {
 		this.data = null
 		this.importedModules = []
 		this.analysed = false
-		this.tNeedImportUpdate = -1
+		this.tImported = -1
 		this.index = -1
 		this.scope = new Scope()
 		this.watcher = null

@@ -7,6 +7,7 @@ import TypeFlag from "./TypeFlag.js"
 let currentModule = null
 let topScope = null
 let currentScope = null
+let prevImportedModules = []
 
 const globalContext = {
 	objectIndex: 0,
@@ -14,14 +15,37 @@ const globalContext = {
 }
 
 const run = (module) => {
+	if(module.analysed) {
+		return
+	}
+
 	const modulePrev = currentModule
 	const scopePrev = currentScope
 
 	currentModule = module
-	currentModule.importedModules.length = 0
-	currentModule.analysed = true
-	
-	parseImports(module.data.body, currentModule.scope)
+
+	if(module.data) {
+		let tmpImportedModules = currentModule.importedModules
+		currentModule.importedModules = prevImportedModules
+		currentModule.importedModules.length = 0
+		currentModule.analysed = true
+		prevImportedModules = tmpImportedModules
+
+		parseImports(module.data.body, currentModule.scope)
+
+		if(currentModule.importedModules.length !== prevImportedModules.length) {
+			ModuleService.importsChanged()
+		}
+		else {
+			for(let n = 0; n < currentModule.importedModules.length; n++) {
+				const module = currentModule.importedModules[n]
+				if(prevImportedModules.indexOf(module) === -1) {
+					ModuleService.importsChanged()
+					break
+				}
+			}
+		}
+	}
 
 	currentModule = modulePrev
 	currentScope = scopePrev

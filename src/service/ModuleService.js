@@ -13,8 +13,8 @@ let entryModule = null
 let buildPath = null
 let modulesImported = []
 let modulesImportedPrev = []
+let needUpdateImports = false
 let tNeedImportUpdate = 0
-let tNeedImportUpdatePrev = -1
 
 const addCustomModule = (modulePath, moduleName) => {
 	const fullPath = path.resolve("", modulePath)
@@ -70,8 +70,6 @@ const loadModule = (importPath, parentModule = null) => {
 		fullPath = path.resolve(parentFolderPath, importPath)	
 	}
 
-	tNeedImportUpdate = Date.now()
-
 	let scriptModule = modulesLoaded[fullPath]
 	if(scriptModule) {
 		parentModule.importedModules.push(scriptModule)
@@ -93,8 +91,6 @@ const loadModule = (importPath, parentModule = null) => {
 
 	WatcherService.watchModule(scriptModule)
 
-	LoggerService.logYellow("Load", scriptModule.path)
-
 	return scriptModule
 }
 
@@ -107,10 +103,20 @@ const unloadModule = (module) => {
 
 const updateModule = (module) => {
 	const text = fs.readFileSync(module.path, "utf8")
+
+	module.analysed = false
+
 	switch(module.ext) {
 		case ".js": {
-			const node = acorn.parse(text, { sourceType: "module" })
-			module.data = node
+			try {
+				const node = acorn.parse(text, { sourceType: "module" })
+				module.data = node
+			}
+			catch(error) {
+				LoggerService.logError("Error", error)
+				module.data = null
+			}
+			
 			module.output = null
 		} break
 
@@ -119,6 +125,12 @@ const updateModule = (module) => {
 			module.output = text
 			break
 	}
+
+	LoggerService.logYellow("Load", module.path)
+}
+
+const setHandler = (func) => {
+	handlerFunc = func
 }
 
 const indexImports = (module, lastIndex = 0) => {
@@ -136,25 +148,35 @@ const indexImports = (module, lastIndex = 0) => {
 	return lastIndex
 }
 
-const getModulesBuffer = () => {
-	if(tNeedImportUpdate !== tNeedImportUpdatePrev) {
-		tNeedImportUpdatePrev = tNeedImportUpdate
+const updateImports = () => {
+	if(!needUpdateImports) {
+		return
+	}
 
-		let tmpBuffer = modulesImported
-		modulesImported = modulesImportedPrev
-		modulesImported.length = 0
-		modulesImportedPrev = tmpBuffer
-	
-		indexImports(entryModule)
+	let tmpBuffer = modulesImported
+	modulesImported = modulesImportedPrev
+	modulesImported.length = 0
+	modulesImportedPrev = tmpBuffer
 
-		for(let n = 0; n < modulesImportedPrev.length; n++) {
-			const module = modulesImportedPrev[n]
-			if(modulesImported.indexOf(module) === -1) {
-				unloadModule(module)
-			}
+	tNeedImportUpdate = Date.now()
+
+	indexImports(entryModule)
+
+	for(let n = 0; n < modulesImportedPrev.length; n++) {
+		const module = modulesImportedPrev[n]
+		if(modulesImported.indexOf(module) === -1) {
+			unloadModule(module)
 		}
 	}
 
+	needUpdateImports = false
+}
+
+const importsChanged = () => {
+	needUpdateImports = true
+}
+
+const getModulesBuffer = () => {
 	return modulesImported
 }
 
@@ -176,6 +198,8 @@ const getEntryModule = () => {
 
 export default {
 	addCustomModule, fetchModule: loadModule, updateModule, getModulesBuffer, 
+	setHandler,
+	updateImports, importsChanged,
 	setBuildPath, getBuildPath,
 	setEntryModule, getEntryModule
 }

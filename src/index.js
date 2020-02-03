@@ -32,13 +32,6 @@ let compiler = null
 
 // Extern.declareStd(rootModule)
 
-const compile = (inputFile, options = {}) => {
-	const module = ModuleService.fetchModule(inputFile)
-	ModuleService.setEntryModule(module)
-	StaticAnalyser.run(module)
-	compiler.run(module)
-}
-
 const resolveBuildPath = () => {
 	buildPath = path.resolve(defaultBuildPath) + path.normalize("/")
 	ModuleService.setBuildPath(buildPath)
@@ -48,7 +41,24 @@ const resolveBuildPath = () => {
 	Utils.copyFiles(buildPath, path.normalize(__dirname + "/../lib/js"), null, true)
 }
 
-const run = async (file) => {
+const compile = (inputFile) => {
+	const module = ModuleService.fetchModule(inputFile)
+	ModuleService.setEntryModule(module)
+	StaticAnalyser.run(module)
+	ModuleService.updateImports()
+	compiler.run(module)
+	
+	const modules = ModuleService.getModulesBuffer()
+	for(let n = 0; n < modules.length; n++) {
+		const module = modules[n]
+		const filePath = `${buildPath}/${module.name}.${module.index}${module.ext}`
+		fs.writeFileSync(filePath, module.output, "utf8")
+	}
+}
+
+const run = async (inputFile) => {
+	resolveBuildPath()
+
 	const options = {
 		output: "js"
 	}
@@ -63,15 +73,7 @@ const run = async (file) => {
 			break
 	}
 
-	compile(file, options)
-	
-	resolveBuildPath()
-
-	const modulesBuffer = ModuleService.getModulesBuffer()
-	for(let n = 0; n < modulesBuffer.length; n++) {
-		const fileModule = modulesBuffer[n]
-		fs.writeFileSync(`${buildPath}/${fileModule.name}.${fileModule.index}${fileModule.ext}`, fileModule.output, "utf8")
-	}
+	compile(inputFile)
 
 	for(let fullPath in indexFiles) {
 		const file = indexFiles[fullPath]
@@ -120,10 +122,17 @@ const update = () => {
 			const module = modulesChanged[fullPath]
 			ModuleService.updateModule(module)
 			StaticAnalyser.run(module)
-			compiler.run(module)
-			fs.writeFileSync(`${buildPath}/${module.name}.${module.index}${module.ext}`, module.output, "utf8")
 			LoggerService.logYellow("Update", module.path)
 		}
+
+		ModuleService.updateImports()
+
+		for(let fullPath in modulesChanged) {
+			const module = modulesChanged[fullPath]
+			compiler.run(module)
+			fs.writeFileSync(`${buildPath}/${module.name}.${module.index}${module.ext}`, module.output, "utf8")
+		}
+
 		needUpdateModules = false
 	}
 
