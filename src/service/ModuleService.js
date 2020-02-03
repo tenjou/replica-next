@@ -91,6 +91,8 @@ const loadModule = (importPath, parentModule = null) => {
 
 	WatcherService.watchModule(scriptModule)
 
+	LoggerService.logGreen("Load", scriptModule.path)
+
 	return scriptModule
 }
 
@@ -125,8 +127,6 @@ const updateModule = (module) => {
 			module.output = text
 			break
 	}
-
-	LoggerService.logYellow("Load", module.path)
 }
 
 const setHandler = (func) => {

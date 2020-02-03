@@ -2,6 +2,7 @@ import path from "path"
 import ModuleService from "../service/ModuleService.js"
 
 let tabs = ""
+let currentModule = null
 
 const run = (module) => {
 	try {
@@ -19,6 +20,8 @@ const parseModule = (module) => {
 	}
 
 	const relativePath = path.relative(module.path, ModuleService.getBuildPath()) + path.normalize("/") + module.name
+	const prevModule = currentModule
+	currentModule = module
 
 	module.output = `"use strict";\n\n`
 	module.output += `(() => {\n\n`
@@ -27,6 +30,8 @@ const parseModule = (module) => {
 
 	module.output += "\n})()\n\n"
 	module.output += `//# sourceURL=${relativePath}`
+
+	currentModule = prevModule
 }
 
 const parseBody = (buffer) => {
@@ -349,8 +354,12 @@ const parseClassDeclaration = (node) => {
 	return output
 }
 
+const parseSuper = (node) => {
+	return "super"
+}
+
 const parseExportDefaultDeclaration = (node) => {
-	const output = `export default ${parse[node.declaration.type](node.declaration)}`
+	const output = `__modules[${currentModule.index}] = ${parse[node.declaration.type](node.declaration)}`
 	return output
 }
 
@@ -509,6 +518,7 @@ const parse = {
 	AwaitExpression: parseAwaitExpression,
 	FunctionDeclaration: parseFunctionDeclaration,
 	ClassDeclaration: parseClassDeclaration,
+	Super: parseSuper,
 	ExportDefaultDeclaration: parseExportDefaultDeclaration,
 	ExportNamedDeclaration: parseExportNamedDeclaration,
 	ImportDeclaration: parseImportDeclaration,
