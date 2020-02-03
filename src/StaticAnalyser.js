@@ -62,6 +62,9 @@ const parseImports = (nodes, scope) => {
 			case "ExportNamedDeclaration":
 				parseExportNamedDeclaration(node)
 				break
+			case "ExportAllDeclaration":
+				parseExportAllDeclaration(node)
+				break
 		}
 	}
 }
@@ -400,6 +403,12 @@ const parseExportDefaultDeclaration = (node) => {
 }
 
 const parseExportNamedDeclaration = (node) => {
+	if(node.source) {
+		updateModule(node, node.source.value)
+	}
+}
+
+const parseExportAllDeclaration = (node) => {
 	if(node.source) {
 		updateModule(node, node.source.value)
 	}

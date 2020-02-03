@@ -42,12 +42,30 @@ const resolveBuildPath = () => {
 }
 
 const compile = (inputFile) => {
+	ModuleService.setHandler((type, module) => {
+		switch(type) {
+			case "load": {
+				if(CliService.flags.watch) {
+					WatcherService.watchModule(module)
+				}
+				LoggerService.logGreen("Load", module.path)
+			} break
+
+			case "unload": {
+				if(CliService.flags.watch) {
+					WatcherService.unwatchModule(module)
+				}
+				LoggerService.logGreen("Unload", module.path)
+			} break
+		}
+	})
+
 	const module = ModuleService.fetchModule(inputFile)
 	ModuleService.setEntryModule(module)
 	StaticAnalyser.run(module)
 	ModuleService.updateImports()
 	compiler.run(module)
-	
+
 	const modules = ModuleService.getModulesBuffer()
 	for(let n = 0; n < modules.length; n++) {
 		const module = modules[n]

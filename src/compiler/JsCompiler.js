@@ -2,7 +2,7 @@ import path from "path"
 import ModuleService from "../service/ModuleService.js"
 
 let tabs = ""
-let currentModule = null
+let moduleCurrent = null
 
 const run = (module) => {
 	try {
@@ -19,19 +19,20 @@ const parseModule = (module) => {
 		return ""
 	}
 
+	const modulePrev = moduleCurrent
+	moduleCurrent = module
+
 	const relativePath = path.relative(module.path, ModuleService.getBuildPath()) + path.normalize("/") + module.name
-	const prevModule = currentModule
-	currentModule = module
 
 	module.output = `"use strict";\n\n`
-	module.output += `(() => {\n\n`
+	module.output += `((exports) => {\n\n`
 
 	module.output += parseBody(module.data.body)
 
-	module.output += "\n})()\n\n"
+	module.output += `\n})(__modules[${module.index}] = {})\n\n`
 	module.output += `//# sourceURL=${relativePath}`
 
-	currentModule = prevModule
+	moduleCurrent = modulePrev
 }
 
 const parseBody = (buffer) => {
@@ -42,7 +43,10 @@ const parseBody = (buffer) => {
 	let output = ""
 	for(let n = 0; n < buffer.length; n++) {
 		const node = buffer[n]
-		output += `${tabs}${parse[node.type](node)}\n`
+		const nodeOutput = parse[node.type](node)
+		if(nodeOutput) {
+			output += `${tabs}${nodeOutput}\n`
+		}
 	}
 	return output	
 }
@@ -291,7 +295,7 @@ const parseUpdateExpression = (node) => {
 const parseFunctionExpression = (node) => {
 	const params = parseArgs(node.params)
 	const body = parse[node.body.type](node.body)
-	const output = `(${params}) ${body}`
+	const output = `function(${params}) ${body}`
 	return output
 }
 
@@ -359,39 +363,86 @@ const parseSuper = (node) => {
 }
 
 const parseExportDefaultDeclaration = (node) => {
-	const output = `__modules[${currentModule.index}] = ${parse[node.declaration.type](node.declaration)}`
+	const declaration = parse[node.declaration.type](node.declaration)
+	const output = `exports.default = ${declaration}`
 	return output
 }
 
 const parseExportNamedDeclaration = (node) => {
 	if(node.declaration) {
 		const declaration = parse[node.declaration.type](node.declaration)
-		const output = `export ${declaration}`
-		return output
+		moduleCurrent.exported.push(declaration)
+		return null
+	}
+	if(node.specifiers.length === 0) {
+		return null
+	}	
+
+	let output = null
+
+	if(node.source) {
+		const moduleName = `__module${node.module.index}`
+		const moduleOutput = `const ${moduleName} = __modules[${node.module.index}]\n`
+	
+		let specifierOutput = ""
+		for(let n = 0; n < node.specifiers.length; n++) {
+			const specifier = node.specifiers[n]
+			specifierOutput += `const ${specifier.local.name} = ${moduleName}.${specifier.local.name}\n`
+			specifierOutput += `exports.${specifier.exported.name} = ${specifier.local.name}`
+		}
+
+		output = `${moduleOutput}${specifierOutput}`
+
+		parseModule(node.module)
+	}
+	else {
+		let specifier = node.specifiers[0]
+		let specifierOutput = `exports.${specifier.exported.name} = ${specifier.local.name}`
+		for(let n = 1; n < node.specifiers.length; n++) {
+			specifier = node.specifiers[n]
+			specifierOutput += `\nexports.${specifier.exported.name} = ${specifier.local.name}`
+		}
+		output = specifierOutput
 	}
 
-	const specifiers = parseSpecifiers(node.specifiers)
-	const output = `export ${specifiers}`
-	if(node.source) {
-		parseModule(node.module)
-		const source = parse[node.source.type](node.source)
-		return `${output} from ${source}`
-	}
+	return output
+}
+
+const parseExportAllDeclaration = (node) => {
+	parseModule(node.module)
+	const output = `__exportAll(__modules[${node.module.index}], exports)`
 	return output
 }
 
 const parseImportDeclaration = (node) => {
 	if(node.specifiers.length === 0) {
-		return ""
-		// return `import ${node.source.raw}`
+		return null
 	}
-	const specifiersOutput = parseSpecifiers(node.specifiers)
-	// const output = `import ${specifiersOutput} from ${node.source.raw}`
-	const output = `const ${specifiersOutput} = __modules[${node.module.index}]`
+
+	const moduleName = `__module${node.module.index}`
+	const moduleOutput = `const ${moduleName} = __modules[${node.module.index}]\n`
+
+	let specifier = node.specifiers[0]
+	let specifierOutput = null
+	if(specifier.type === "ImportDefaultSpecifier") {
+		specifierOutput = `const ${specifier.local.name} = ${moduleName}.default`
+	}
+	else if(specifier.type === "ImportNamespaceSpecifier") {
+		specifierOutput = `const ${specifier.local.name} = __importAll(${moduleName})`
+	}
+	else {
+		specifierOutput = `const ${specifier.local.name} = ${moduleName}.${specifier.local.name}`
+	}
+	for(let n = 1; n < node.specifiers.length; n++) {
+		const specifier = node.specifiers[n]
+		specifierOutput += `\nconst ${specifier.local.name} = ${moduleName}.${specifier.local.name}`
+	}
+
 	if(node.module && !node.module.output) {
 		parseModule(node.module)
 	}
-	return output
+	
+	return `${moduleOutput}${specifierOutput}`
 }
 
 const parseAssignmentPattern = (node) => {
@@ -419,41 +470,43 @@ const parseMethodDefinition = (node) => {
 }
 
 const parseSpecifiers = (specifiers) => {
-	if(specifiers.length === 0) {
-		return ""
+    if(specifiers.length === 0) {
+        return ""
 	}
-	if(specifiers.length === 1) {
-		const specifier = specifiers[0]
-		const specifierOutput = parseSpecifier(specifiers[0])
-		if(specifier.type === "ImportDefaultSpecifier") {
-			return specifierOutput
-		}
-		return `{ ${specifierOutput} }`
+	
+	let specifier = specifiers[0]
+	const specifierOutput = parse[specifier.type](specifier)
+
+    if(specifiers.length === 1) {
+        if(specifier.type === "ImportDefaultSpecifier") {
+            return specifierOutput
+        }
+        return `{ ${specifierOutput} }`
 	}
-	let output = `{ ${parseSpecifier(specifiers[0])}`
-	for(let n = 1; n < specifiers.length; n++) {
-		output += `, ${parseSpecifier(specifiers[n])}`
-	}
-	output += ` }`
-	return output
+	
+    let output = `{ ${specifierOutput}`
+    for(let n = 1; n < specifiers.length; n++) {
+		specifier = specifiers[n]
+        output += `, ${parse[specifier.type](specifier)}`
+    }
+    output += ` }`
+    return output
 }
 
-const parseSpecifier = (specifier) => {
-	switch(specifier.type) {
-		case "ImportDefaultSpecifier":
-			return specifier.local.name
-		case "ImportSpecifier": {
-			const imported = parse[specifier.imported.type](specifier.imported)
-			const local = parse[specifier.local.type](specifier.local)
-			return (imported === local) ? imported : `${local} as ${imported}`
-		}
-		case "ExportSpecifier": {
-			const exported = parse[specifier.exported.type](specifier.exported)
-			const local = parse[specifier.local.type](specifier.local)
-			return (exported === local) ? exported : `${local} as ${exported}`
-		}
-	}
-	return ""
+const parseImportDefaultSpecifier = (node) => {
+	return node.local.name
+}
+
+const parseImportSpecifier = (node) => {
+	const imported = parse[node.imported.type](node.imported)
+	const local = parse[node.local.type](node.local)
+	return (imported === local) ? imported : `${local}: ${imported}`
+}
+
+const parseExportSpecifier = (node) => {
+	const exported = parse[node.exported.type](node.exported)
+	const local = parse[node.local.type](node.local)
+	return (exported === local) ? exported : `${local}: ${exported}`
 }
 
 const parseArgs = (args) => {
@@ -521,10 +574,14 @@ const parse = {
 	Super: parseSuper,
 	ExportDefaultDeclaration: parseExportDefaultDeclaration,
 	ExportNamedDeclaration: parseExportNamedDeclaration,
+	ExportAllDeclaration: parseExportAllDeclaration,
 	ImportDeclaration: parseImportDeclaration,
 	MethodDefinition: parseMethodDefinition,
 	AssignmentPattern: parseAssignmentPattern,
-	CatchClause: parseCatchClause
+	CatchClause: parseCatchClause,
+	ImportDefaultSpecifier: parseImportDefaultSpecifier,
+	ImportSpecifier: parseImportSpecifier,
+	ExportSpecifier: parseExportSpecifier
 }
 
 export default {

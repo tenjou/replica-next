@@ -2,18 +2,18 @@ import fs from "fs"
 import path from "path"
 import acorn from "acorn"
 import Module from "../Module.js"
-import WatcherService from "./WatcherService.js"
 import LoggerService from "./LoggerService.js"
 
 const modules = {}
 const modulesLoaded = {}
 const rootModule = new Module("", null)
 const nodeModulesPath = process.cwd() + "/node_modules/"
+let handlerFunc = null
 let entryModule = null
 let buildPath = null
 let modulesImported = []
 let modulesImportedPrev = []
-let needUpdateImports = false
+let needUpdateImports = true
 let tNeedImportUpdate = 0
 
 const addCustomModule = (modulePath, moduleName) => {
@@ -70,10 +70,10 @@ const loadModule = (importPath, parentModule = null) => {
 		fullPath = path.resolve(parentFolderPath, importPath)	
 	}
 
-	let scriptModule = modulesLoaded[fullPath]
-	if(scriptModule) {
-		parentModule.importedModules.push(scriptModule)
-		return scriptModule
+	let module = modulesLoaded[fullPath]
+	if(module) {
+		parentModule.importedModules.push(module)
+		return module
 	}
 
 	if(!fs.existsSync(fullPath)) {
@@ -82,25 +82,26 @@ const loadModule = (importPath, parentModule = null) => {
 	}
 
 	const baseName = path.basename(fullPath)
-	scriptModule = new Module(fullPath, baseName, extName)
-	scriptModule.scope.parent = parentModule.scope
-	parentModule.importedModules.push(scriptModule)
-	modulesLoaded[fullPath] = scriptModule
+	module = new Module(fullPath, baseName, extName)
+	module.scope.parent = parentModule.scope
+	parentModule.importedModules.push(module)
+	modulesLoaded[fullPath] = module
 
-	updateModule(scriptModule)
+	updateModule(module)
 
-	WatcherService.watchModule(scriptModule)
+	if(handlerFunc) {
+		handlerFunc("load", module)
+	}
 
-	LoggerService.logGreen("Load", scriptModule.path)
-
-	return scriptModule
+	return module
 }
 
 const unloadModule = (module) => {
 	delete modulesLoaded[module.path]
-	WatcherService.unwatchModule(module)
 
-	LoggerService.logGreen("Unload", module.path)
+	if(handlerFunc) {
+		handlerFunc("unload", module)
+	}
 }
 
 const updateModule = (module) => {
