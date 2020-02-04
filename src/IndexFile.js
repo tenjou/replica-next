@@ -57,7 +57,7 @@ class IndexFile {
 			if(CliService.flags.timestamp) {
 				for(let n = 0; n < modules.length; n++) {
 					const module = modules[n]
-					if(!module.data) { 
+					if(!module.output) { 
 						continue 
 					}
 					content += `<script src="${buildPath}${module.name}.${module.index}.js?${Date.now()}"></script>\n`
@@ -66,7 +66,7 @@ class IndexFile {
 			else {
 				for(let n = 0; n < modules.length; n++) {
 					const module = modules[n]
-					if(!module.data) { 
+					if(!module.output) { 
 						continue 
 					}
 					content += `<script src="${buildPath}${module.name}.${module.index}.js"></script>\n`

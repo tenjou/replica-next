@@ -1,5 +1,4 @@
 import path from "path"
-import ModuleService from "../service/ModuleService.js"
 
 let tabs = ""
 let moduleCurrent = null
@@ -17,7 +16,15 @@ const run = (module) => {
 
 const parseModule = (module) => {
 	if(!module.data) {
-		return ""
+		switch(module.ext) {
+			case ".json":
+				compileJSON(module)
+				break
+			default:
+				compileText(module)
+				break
+		}
+		return
 	}
 
 	const modulePrev = moduleCurrent
@@ -34,6 +41,26 @@ const parseModule = (module) => {
 	module.output += `//# sourceURL=${relativePath}`
 
 	moduleCurrent = modulePrev
+}
+
+const compileJSON = (module) => {
+	const relativePath = path.relative(process.cwd(), module.path)
+
+	module.output = `"use strict";\n\n`
+	module.output += `((exports) => {\n\n`
+	module.output += `exports.default = JSON.parse(\`${module.text}\`)\n`
+	module.output += `\n})(__modules[${module.index}] = {})\n\n`
+	module.output += `//# sourceURL=${relativePath}`
+}
+
+const compileText = (module) => {
+	const relativePath = path.relative(process.cwd(), module.path)
+
+	module.output = `"use strict";\n\n`
+	module.output += `((exports) => {\n\n`
+	module.output += `exports.default = \`${module.text}\`\n`
+	module.output += `\n})(__modules[${module.index}] = {})\n\n`
+	module.output += `//# sourceURL=${relativePath}`
 }
 
 const parseBody = (buffer) => {

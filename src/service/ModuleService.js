@@ -118,13 +118,13 @@ const updateModule = (module) => {
 				LoggerService.logError("Error", error)
 				module.data = null
 			}
-			
 			module.output = null
 		} break
 
 		default:
 			module.data = null
-			module.output = text
+			module.text = text
+			module.output = null
 			break
 	}
 }

@@ -64,7 +64,7 @@ const compile = (inputFile) => {
 		const modules = ModuleService.getModulesBuffer()
 		for(let n = 0; n < modules.length; n++) {
 			const module = modules[n]
-			const filePath = `${buildPath}/${module.name}.${module.index}${module.ext}`
+			const filePath = `${buildPath}/${module.name}.${module.index}.js`
 			fs.writeFileSync(filePath, module.output, "utf8")
 		}
 	}
@@ -156,7 +156,7 @@ const update = () => {
 			for(let fullPath in modulesChanged) {
 				const module = modulesChanged[fullPath]
 				compiler.run(module)
-				fs.writeFileSync(`${buildPath}/${module.name}.${module.index}${module.ext}`, module.output, "utf8")
+				fs.writeFileSync(`${buildPath}/${module.name}.${module.index}.js`, module.output, "utf8")
 			}
 		}
 

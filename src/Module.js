@@ -6,6 +6,7 @@ class Module {
 		this.name = name
 		this.ext = ext
 		this.data = null
+		this.text = null
 		this.importedModules = []
 		this.analysed = false
 		this.tImported = -1
