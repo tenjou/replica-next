@@ -3,6 +3,7 @@ import ModuleService from "../service/ModuleService.js"
 
 let tabs = ""
 let moduleCurrent = null
+let isInsideCls = false
 
 const run = (module) => {
 	try {
@@ -236,7 +237,7 @@ const parseAssignmentExpression = (node) => {
 
 const parseUnaryExpression = (node) => {
 	const arg = parse[node.argument.type](node.argument)
-	const space = (node.operator === "typeof") ? " " : ""
+	const space = (node.operator === "typeof" || node.operator === "delete") ? " " : ""
 	const output = node.prefix ? `${node.operator}${space}${arg}` : `${arg}${node.operator}`
 	return output
 }
@@ -295,8 +296,11 @@ const parseUpdateExpression = (node) => {
 const parseFunctionExpression = (node) => {
 	const params = parseArgs(node.params)
 	const body = parse[node.body.type](node.body)
-	const output = `function(${params}) ${body}`
-	return output
+	const output = `(${params}) ${body}`
+	if(isInsideCls) {
+		return output
+	}
+	return `function${output}`
 }
 
 const parseArrowFunctionExpression = (node) => {
@@ -334,8 +338,22 @@ const parseAwaitExpression = (node) => {
 }
 
 const parseObjectProperty = (node) => {
+	const isInsideClsPrev = isInsideCls
+	isInsideCls = true
+
 	const key = parse[node.key.type](node.key)
 	const value = parse[node.value.type](node.value)
+	
+	isInsideCls = isInsideClsPrev
+
+	if(node.kind === "set" || node.kind === "get") {
+		const output = `${node.kind} ${key}${value}`
+		return output
+	}	
+	if(node.value.type === "FunctionExpression") {
+		return `${key}${value}`
+	}	
+
 	const output = `${key}: ${value}`
 	return output
 }
@@ -370,9 +388,11 @@ const parseExportDefaultDeclaration = (node) => {
 
 const parseExportNamedDeclaration = (node) => {
 	if(node.declaration) {
-		const declaration = parse[node.declaration.type](node.declaration)
-		moduleCurrent.exported.push(declaration)
-		return null
+		const declaration = node.declaration
+		const declarationOutput = parse[declaration.type](declaration)
+		const exportOutput = `exports.${declaration.id.name} = ${declaration.id.name}`
+		const output = `${declarationOutput}\n${exportOutput}`
+		return output
 	}
 	if(node.specifiers.length === 0) {
 		return null
@@ -382,12 +402,12 @@ const parseExportNamedDeclaration = (node) => {
 
 	if(node.source) {
 		const moduleName = `__module${node.module.index}`
-		const moduleOutput = `const ${moduleName} = __modules[${node.module.index}]\n`
+		const moduleOutput = `const ${moduleName} = __modules[${node.module.index}]`
 	
 		let specifierOutput = ""
 		for(let n = 0; n < node.specifiers.length; n++) {
 			const specifier = node.specifiers[n]
-			specifierOutput += `const ${specifier.local.name} = ${moduleName}.${specifier.local.name}\n`
+			specifierOutput += `\nconst ${specifier.local.name} = ${moduleName}.${specifier.local.name}\n`
 			specifierOutput += `exports.${specifier.exported.name} = ${specifier.local.name}`
 		}
 
@@ -415,34 +435,34 @@ const parseExportAllDeclaration = (node) => {
 }
 
 const parseImportDeclaration = (node) => {
+	if(node.module && !node.module.output) {
+		parseModule(node.module)
+	}
+
 	if(node.specifiers.length === 0) {
 		return null
 	}
 
-	const moduleName = `__module${node.module.index}`
-	const moduleOutput = `const ${moduleName} = __modules[${node.module.index}]\n`
-
+	let output = null
 	let specifier = node.specifiers[0]
-	let specifierOutput = null
+	
 	if(specifier.type === "ImportDefaultSpecifier") {
-		specifierOutput = `const ${specifier.local.name} = ${moduleName}.default`
+		output = `const ${specifier.local.name} = __modules[${node.module.index}].default`
 	}
 	else if(specifier.type === "ImportNamespaceSpecifier") {
-		specifierOutput = `const ${specifier.local.name} = __importAll(${moduleName})`
+		output = `const ${specifier.local.name} = __modules[${node.module.index}]`
 	}
 	else {
-		specifierOutput = `const ${specifier.local.name} = ${moduleName}.${specifier.local.name}`
-	}
-	for(let n = 1; n < node.specifiers.length; n++) {
-		const specifier = node.specifiers[n]
-		specifierOutput += `\nconst ${specifier.local.name} = ${moduleName}.${specifier.local.name}`
+		const moduleName = `__module${node.module.index}`
+		let specifierOutput = `const ${specifier.local.name} = ${moduleName}.${specifier.local.name}`
+		for(let n = 1; n < node.specifiers.length; n++) {
+			const specifier = node.specifiers[n]
+			specifierOutput += `\nconst ${specifier.local.name} = ${moduleName}.${specifier.local.name}`
+		}		
+		output = `const ${moduleName} = __modules[${node.module.index}]\n${specifierOutput}`
 	}
 
-	if(node.module && !node.module.output) {
-		parseModule(node.module)
-	}
-	
-	return `${moduleOutput}${specifierOutput}`
+	return output
 }
 
 const parseAssignmentPattern = (node) => {
@@ -460,9 +480,15 @@ const parseCatchClause = (node) => {
 }
 
 const parseMethodDefinition = (node) => {
+	const insideClsPrev = isInsideCls
+	isInsideCls = true
+
 	const key = parse[node.key.type](node.key)
 	const value = parse[node.value.type](node.value)
 	const output = `${key}${value}`
+
+	isInsideCls = insideClsPrev
+
 	if(node.value.async) {
 		return `async ${output}`
 	}
