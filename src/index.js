@@ -22,7 +22,7 @@ const __dirname = path.dirname(__filename)
 const packagePath = path.resolve(__dirname, "../package.json")
 const packageData = JSON.parse(fs.readFileSync(packagePath))
 
-const modulesChanged = {}
+let modulesChanged = {}
 const indexFiles = {}
 const indexChanged = {}
 let needUpdateModules = false
@@ -144,6 +144,11 @@ const update = () => {
 		ModuleService.updateImports()
 
 		if(CliService.flags.concat) {
+			for(let fullPath in modulesChanged) {
+				const module = modulesChanged[fullPath]
+				compiler.run(module)
+			}
+
 			ProjectService.concatFiles()
 		}
 		else {		
