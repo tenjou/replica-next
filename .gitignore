@@ -1,3 +1,4 @@
 index.html
 build/*
 node_modules/*
+build.js

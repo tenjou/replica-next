@@ -1,6 +1,7 @@
 import fs from "fs"
 import path from "path"
 import ModuleService from "./service/ModuleService.js"
+import ProjectService from "./service/ProjectService.js"
 import CliService from "./service/CliService.js"
 import Server from "./Server.js"
 
@@ -31,17 +32,21 @@ class IndexFile {
 			return
 		}
 
-		const buildPath = path.relative(this.targetPath, ModuleService.getBuildPath()) + path.normalize("/")
+		const buildPath = path.relative(this.targetPath, ProjectService.getBuildPath()) + path.normalize("/")
 		let content = this.contentStart
 
-		if(CliService.flags.concat) {
-			const buildSrc = "build.js"
+		if(CliService.flags.server) {
+			content += `<script>window.REPLICA_SERVER_PORT = ${Server.getWsPort()}</script>\n`
+		}
 
+		if(CliService.flags.concat) {
+			const buildFilePath = path.relative(this.targetPath, ProjectService.getBuildFilePath())
+			
 			if(CliService.flags.timestamp) {
-				content += `<script src="${buildPath}${buildSrc}?${Date.now()}"></script>\n`
+				content += `<script src="${buildFilePath}?${Date.now()}"></script>\n`
 			}
 			else {
-				content += `<script src="${buildPath}${buildSrc}"></script>\n`
+				content += `<script src="${buildFilePath}"></script>\n`
 			}
 		}
 		else {
@@ -67,11 +72,10 @@ class IndexFile {
 					content += `<script src="${buildPath}${module.name}.${module.index}.js"></script>\n`
 				}
 			}
-		}
 
-		if(CliService.flags.server) {
-			content += `<script>window.REPLICA_SERVER_PORT = ${Server.getWsPort()}</script>\n`
-			content += `<script src="${buildPath}replica_server.js"></script>\n`
+			if(CliService.flags.server) {
+				content += `<script src="${buildPath}replica_server.js"></script>\n`
+			}			
 		}
 
 		content += this.contentEnd

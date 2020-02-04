@@ -10,7 +10,6 @@ const rootModule = new Module("", null)
 const nodeModulesPath = process.cwd() + "/node_modules/"
 let handlerFunc = null
 let entryModule = null
-let buildPath = null
 let modulesImported = []
 let modulesImportedPrev = []
 let needUpdateImports = true
@@ -181,14 +180,6 @@ const getModulesBuffer = () => {
 	return modulesImported
 }
 
-const setBuildPath = (path) => {
-	buildPath = path
-}
-
-const getBuildPath = () => {
-	return buildPath
-}
-
 const setEntryModule = (module) => {
 	entryModule = module
 }
@@ -201,6 +192,5 @@ export default {
 	addCustomModule, fetchModule: loadModule, updateModule, getModulesBuffer, 
 	setHandler,
 	updateImports, importsChanged,
-	setBuildPath, getBuildPath,
 	setEntryModule, getEntryModule
 }

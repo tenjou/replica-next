@@ -8,6 +8,7 @@ import CliService from "./service/CliService.js"
 import LoggerService from "./service/LoggerService.js"
 import WatcherService from "./service/WatcherService.js"
 import ModuleService from "./service/ModuleService.js"
+import ProjectService from "./service/ProjectService.js"
 import Module from "./Module.js"
 import StaticAnalyser from "./StaticAnalyser.js"
 import Optimizer from "./Optimizer.js"
@@ -24,22 +25,11 @@ const packageData = JSON.parse(fs.readFileSync(packagePath))
 const modulesChanged = {}
 const indexFiles = {}
 const indexChanged = {}
-let defaultBuildPath = "build/"
-let buildPath = defaultBuildPath
 let needUpdateModules = false
 let needUpdateIndex = true
 let compiler = null
 
 // Extern.declareStd(rootModule)
-
-const resolveBuildPath = () => {
-	buildPath = path.resolve(defaultBuildPath) + path.normalize("/")
-	ModuleService.setBuildPath(buildPath)
-
-	Utils.removeDir(buildPath)
-	Utils.createRelativeDir(buildPath)
-	Utils.copyFiles(buildPath, path.normalize(__dirname + "/../lib/js"), null, true)
-}
 
 const compile = (inputFile) => {
 	ModuleService.setHandler((type, module) => {
@@ -66,16 +56,22 @@ const compile = (inputFile) => {
 	ModuleService.updateImports()
 	compiler.run(module)
 
-	const modules = ModuleService.getModulesBuffer()
-	for(let n = 0; n < modules.length; n++) {
-		const module = modules[n]
-		const filePath = `${buildPath}/${module.name}.${module.index}${module.ext}`
-		fs.writeFileSync(filePath, module.output, "utf8")
+	if(CliService.flags.concat) {
+		ProjectService.concatFiles()
+	}
+	else {
+		const buildPath = ProjectService.getBuildPath()
+		const modules = ModuleService.getModulesBuffer()
+		for(let n = 0; n < modules.length; n++) {
+			const module = modules[n]
+			const filePath = `${buildPath}/${module.name}.${module.index}${module.ext}`
+			fs.writeFileSync(filePath, module.output, "utf8")
+		}
 	}
 }
 
 const run = async (inputFile) => {
-	resolveBuildPath()
+	ProjectService.resolve(__dirname)
 
 	const options = {
 		output: "js"
@@ -93,13 +89,6 @@ const run = async (inputFile) => {
 
 	compile(inputFile)
 
-	for(let fullPath in indexFiles) {
-		const file = indexFiles[fullPath]
-		WatcherService.watchFile(file)
-	}
-
-	WatcherService.setListener(handleWatcherChange)
-
 	if(CliService.flags.server) {
 		CliService.flags.watch = CliService.flags.watch || {}
 		await Server.start(CliService.flags.server.httpPort, CliService.flags.server.wsPort)
@@ -113,6 +102,15 @@ const run = async (inputFile) => {
 const start = () => {
 	if(CliService.flags.uglify) {
 		CliService.flags.concat = {}
+	}
+
+	if(CliService.flags.watch) {
+		for(let fullPath in indexFiles) {
+			const file = indexFiles[fullPath]
+			WatcherService.watchFile(file)
+		}
+
+		WatcherService.setListener(handleWatcherChange)
 	}
 
 	if(CliService.flags.watch) {
@@ -145,10 +143,16 @@ const update = () => {
 
 		ModuleService.updateImports()
 
-		for(let fullPath in modulesChanged) {
-			const module = modulesChanged[fullPath]
-			compiler.run(module)
-			fs.writeFileSync(`${buildPath}/${module.name}.${module.index}${module.ext}`, module.output, "utf8")
+		if(CliService.flags.concat) {
+			ProjectService.concatFiles()
+		}
+		else {		
+			const buildPath = ProjectService.getBuildPath()
+			for(let fullPath in modulesChanged) {
+				const module = modulesChanged[fullPath]
+				compiler.run(module)
+				fs.writeFileSync(`${buildPath}/${module.name}.${module.index}${module.ext}`, module.output, "utf8")
+			}
 		}
 
 		modulesChanged = {}
@@ -239,6 +243,10 @@ const makeProject = (dir, template) => {
 	})
 }
 
+const setConcatFile = (filename) => {
+	ProjectService.setBuildFilename(filename)
+}
+
 const printVersion = () => {
 	console.log(`${packageData.name} ${packageData.version}v`)
 }
@@ -251,7 +259,7 @@ try {
 		.addOption("-t, --timestamp", "Add timestamps to output files")
 		.addOption("-w, --watch", "Look after file changes in set input folders")
 		.addOption("-u, --uglify", "Specify that concatenated file should be minified, activates --concat")
-		.addOption("-c, --concat [file]", "Concat all files into one")
+		.addOption("-c, --concat [file]", "Concat all files into one", setConcatFile)
 		.addOption("-s, --server [httpPort] [wsPort]", "Launch development server, activates --watch")
 		.addOption("-b, --build <dir>", "Specify build directory", setBuildDir)
 		.addOption("-m, --module <dir> [name]", "Add custom module", addModule)
