@@ -71,6 +71,10 @@ const compile = (inputFile) => {
 }
 
 const run = async (inputFile) => {
+	if(CliService.flags.uglify) {
+		CliService.flags.concat = {}
+	}
+
 	ProjectService.resolve(__dirname)
 
 	const options = {
@@ -100,10 +104,6 @@ const run = async (inputFile) => {
 }
 
 const start = () => {
-	if(CliService.flags.uglify) {
-		CliService.flags.concat = {}
-	}
-
 	if(CliService.flags.watch) {
 		for(let fullPath in indexFiles) {
 			const file = indexFiles[fullPath]
