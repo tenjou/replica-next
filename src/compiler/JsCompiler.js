@@ -23,7 +23,7 @@ const parseModule = (module) => {
 	const modulePrev = moduleCurrent
 	moduleCurrent = module
 
-	const relativePath = path.relative(module.path, ModuleService.getBuildPath()) + path.normalize("/") + module.name
+	const relativePath = path.relative(process.cwd(), module.path)
 
 	module.output = `"use strict";\n\n`
 	module.output += `((exports) => {\n\n`
