@@ -151,6 +151,7 @@ const update = () => {
 			fs.writeFileSync(`${buildPath}/${module.name}.${module.index}${module.ext}`, module.output, "utf8")
 		}
 
+		modulesChanged = {}
 		needUpdateModules = false
 	}
 
@@ -243,15 +244,6 @@ const printVersion = () => {
 }
 
 try {
-	process.argv = [ '',
-		'',
-		'../test-next/src/index.js',
-		'-i', '../test-next/_index.html', '../test-next/index.html', 
-		"-m", "../../libs/wabi",
-		"-s", "8060", "8061",
-		"-t"
-	]	
-
 	CliService.setName(packageData.name)
 		.setVersion(packageData.version)
 		.setDescription(packageData.description)
