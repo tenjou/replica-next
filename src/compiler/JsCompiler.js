@@ -259,7 +259,7 @@ const parseVariableDeclarator = (node) => {
 }
 
 const parseAssignmentExpression = (node) => {
-	const output = `${parse[node.left.type](node.left)} = ${parse[node.right.type](node.right)}`
+	const output = `${parse[node.left.type](node.left)} ${node.operator} ${parse[node.right.type](node.right)}`
 	return output
 }
 
@@ -488,10 +488,10 @@ const parseImportDeclaration = (node) => {
 	}
 	else {
 		const moduleName = `__module${node.module.index}`
-		let specifierOutput = `const ${specifier.local.name} = ${moduleName}.${specifier.local.name}`
+		let specifierOutput = `const ${specifier.local.name} = ${moduleName}.${specifier.imported.name}`
 		for(let n = 1; n < node.specifiers.length; n++) {
 			const specifier = node.specifiers[n]
-			specifierOutput += `\nconst ${specifier.local.name} = ${moduleName}.${specifier.local.name}`
+			specifierOutput += `\nconst ${specifier.local.name} = ${moduleName}.${specifier.imported.name}`
 		}		
 		output = `const ${moduleName} = __modules[${node.module.index}]\n${specifierOutput}`
 	}
