@@ -99,7 +99,8 @@ const parseBlockStatement = (node) => {
 }
 
 const parseExpressionStatement = (node) => {
-	return parse[node.expression.type](node.expression)
+	const output = parse[node.expression.type](node.expression)
+	return output
 }
 
 const parseReturnStatement = (node) => {
@@ -299,9 +300,15 @@ const parseMemberExpression = (node) => {
 }
 
 const parseCallExpression = (node) => {
-	const params = parseArgs(node.arguments)
-	const output = parse[node.callee.type](node.callee) + `(${params})`
-	return output
+	const params = `(${parseArgs(node.arguments)})`
+	const callee = parse[node.callee.type](node.callee)
+	switch(node.callee.type) {
+		case "FunctionExpression":
+			return `;(${callee}${params})`
+		case "ArrowFunctionExpression":
+			return `;(${callee})${params}`
+	}
+	return `${callee}${params}`
 }
 
 const parseNewExpression = (node) => {
