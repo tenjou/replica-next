@@ -18,6 +18,7 @@ class IndexFile {
 
 		this.fullPath = fullPath
 		this.targetPath = targetPath
+		this.targetDir = path.dirname(targetPath)
 		this.timestamp = ""
 
 		this.update()
@@ -32,7 +33,7 @@ class IndexFile {
 			return
 		}
 
-		const buildPath = path.relative(this.targetPath, ProjectService.getBuildPath()) + path.normalize("/")
+		const buildPath = path.relative(this.targetDir, ProjectService.getBuildPath()) + path.normalize("/")
 		let content = this.contentStart
 
 		if(CliService.flags.server) {
