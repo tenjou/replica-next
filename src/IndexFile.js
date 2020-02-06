@@ -41,7 +41,7 @@ class IndexFile {
 		}
 
 		if(CliService.flags.concat) {
-			const buildFilePath = path.relative(this.targetPath, ProjectService.getBuildFilePath())
+			const buildFilePath = path.relative(this.targetDir, ProjectService.getBuildFilePath())
 			
 			if(CliService.flags.timestamp) {
 				content += `<script src="${buildFilePath}?${Date.now()}"></script>\n`
