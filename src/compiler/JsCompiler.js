@@ -111,10 +111,16 @@ const parseReturnStatement = (node) => {
 }
 
 const parseContinueStatement = (node) => {
+	if(node.label) {
+		return `continue ${node.label.name}`
+	}
 	return "continue"
 }
 
 const parseBreakStatement = (node) => {
+	if(node.label) {
+		return `break ${node.label.name}`
+	}	
 	return "break"
 }
 

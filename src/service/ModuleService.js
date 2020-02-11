@@ -4,6 +4,12 @@ import acorn from "acorn"
 import Module from "../Module.js"
 import LoggerService from "./LoggerService.js"
 
+const acornConfig = {
+	ecmaVersion: 6,
+	sourceType: "module",
+	// allowImportExportEverywhere: true
+}
+
 const modules = {}
 const modulesLoaded = {}
 const rootModule = new Module("", null)
@@ -111,7 +117,7 @@ const updateModule = (module) => {
 	switch(module.ext) {
 		case ".js": {
 			try {
-				const node = acorn.parse(text, { sourceType: "module" })
+				const node = acorn.parse(text, acornConfig)
 				module.data = node
 			}
 			catch(error) {
