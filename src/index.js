@@ -257,23 +257,6 @@ const printVersion = () => {
 }
 
 try {
-    process.argv = [ '',
-        '',
-        '../test-next/src/index.js',
-        '-i', '../test-next/_index.html', '../test-next/index.html', 
-        "-m", "../../libs/wabi",
-        "-s", "8060", "8061",
-        "-t"
-	]    
-    // process.argv = [ '',
-    //     '',
-    //     '../../games/powerseeker/client/src/index.js',
-    //     '-i', '../../games/powerseeker/client/_index.html', '../../../games/powerseeker/client/index.html', 
-    //     "-m", "../../libs/wabi",
-    //     "-s", "8060", "8061",
-    //     "-t"
-    // ]    	
-
 	CliService.setName(packageData.name)
 		.setVersion(packageData.version)
 		.setDescription(packageData.description)

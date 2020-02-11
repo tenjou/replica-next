@@ -47,9 +47,7 @@ const compileJSON = (module) => {
 	const relativePath = path.relative(process.cwd(), module.path)
 
 	module.output = `"use strict";\n\n`
-	module.output += `((exports) => {\n\n`
-	module.output += `exports.default = JSON.parse(\`${module.text}\`)\n`
-	module.output += `\n})(__modules[${module.index}] = {})\n\n`
+	module.output += `__modules[${module.index}] = { default: JSON.parse(\`${module.text}\`) }\n`
 	module.output += `//# sourceURL=${relativePath}`
 }
 
@@ -57,9 +55,7 @@ const compileText = (module) => {
 	const relativePath = path.relative(process.cwd(), module.path)
 
 	module.output = `"use strict";\n\n`
-	module.output += `((exports) => {\n\n`
-	module.output += `exports.default = \`${module.text}\`\n`
-	module.output += `\n})(__modules[${module.index}] = {})\n\n`
+	module.output += `__modules[${module.index}] = { default: \`${module.text}\` }\n`
 	module.output += `//# sourceURL=${relativePath}`
 }
 
