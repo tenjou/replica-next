@@ -247,7 +247,7 @@ const parseTemplateLiteral = (node) => {
 		const expressionNode = node.expressions[n - 1]
 		output += ` + ${parse[expressionNode.type](expressionNode)}`
 		if(quasisNode.value.raw.length > 0) {
-			output += ` + "${quasisNode.value.cooked}"`
+			output += ` + "${escapeNewline(quasisNode.value.cooked)}"`
 		}
 	}
 	return output
@@ -593,6 +593,25 @@ const incTabs = () => {
 
 const decTabs = () => {
 	tabs = tabs.slice(0, -1)
+}
+
+const escapeNewline = (str) => {
+	return str.replace(/["'\\\n\r\u2028\u2029]/g, (character) => {
+		switch (character) {
+			case '"':
+			case "'":
+			case "\\":
+				return "\\" + character
+			case "\n":
+				return "\\n"
+			case "\r":
+				return "\\r"
+			case "\u2028":
+				return "\\u2028"
+			case "\u2029":
+				return "\\u2029"
+		}
+	})
 }
 
 const parse = {
