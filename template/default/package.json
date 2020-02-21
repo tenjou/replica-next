@@ -5,8 +5,8 @@
 	"author": "",
 	"main": "src/index.js",
 	"scripts": {
-		"build": "build-next src/index.js -i _index.html index.html -t -u",
-		"dev": "build-next src/index.js -i _index.html index.html -t -s"
+		"build": "node_modules/.bin/replica-next src/index.js -i _index.html index.html -t -u",
+		"dev": "node_modules/.bin/replica-next src/index.js -i _index.html index.html -t -s"
 	},
 	"dependencies": {
 		"replica-next": "*"
