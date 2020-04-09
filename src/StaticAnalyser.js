@@ -1,6 +1,6 @@
 import ModuleService from "./service/ModuleService.js"
 import Scope from "./Scope.js"
-import Error from "./Error.js"
+import ReplicaError from "./ReplicaError.js"
 import PrimitiveType from "./PrimitiveType.js"
 import TypeFlag from "./TypeFlag.js"
 
@@ -136,14 +136,14 @@ const parseArrayExpression = (node) => {
 		const currVarType = parse[element.type](element)
 		if(!varType) {
 			if(currVarType.primitive == PrimitiveType.Unknown) {
-				Error.unknownType()
+				ReplicaError.unknownType()
 			}
 			else {
 				varType = currVarType
 			}
 		}
 		if(currVarType != varType) {
-			Error.typeMismatch(currVarType, gotType)
+			ReplicaError.typeMismatch(currVarType, gotType)
 		}
 	}
 
@@ -189,7 +189,7 @@ const parseTemplateLiteral = (node) => {
 		const expression = expressions[n]
 		const varType = parse[expression.type](expression)
 		if(varType.primitive !== PrimitiveType.String) {
-			Error.typeMismatch(topScope.vars.String, varType)
+			ReplicaError.typeMismatch(topScope.vars.String, varType)
 		}
 	}
 	return topScope.vars.String
@@ -221,7 +221,7 @@ const parseAssignmentExpression = (node) => {
 	const leftVar = getVar(node.left, scope)
 	if(!leftVar) {
 		const name = createName(node.left)
-		Error.reference(name)
+		ReplicaError.reference(name)
 	}
 	const leftType = leftVar.varType
 	const rightType = parse[node.right.type](node.right)
@@ -236,7 +236,7 @@ const parseAssignmentExpression = (node) => {
 			return rightType
 		}
 		else if(leftType !== rightType) {
-			Error.typeMismatch(rightType, leftType)
+			ReplicaError.typeMismatch(rightType, leftType)
 		}          
 	}
 	return leftType
@@ -263,7 +263,7 @@ const parseCallExpression = (node) => {
 	const funcNode = getVar(node.callee, scope)
 	if(!funcNode) {
 		const name = createName(node.callee)
-		Error.reference(name)
+		ReplicaError.reference(name)
 	}
 	if(funcNode.varType.primitive !== PrimitiveType.Function) {
 		const name = createName(node.callee)
@@ -577,7 +577,7 @@ const createName = (node) => {
 
 const defineVar = (name, node) => {
 	if(scope.vars[name]) {
-		Error.redefinition(name)
+		ReplicaError.redefinition(name)
 	}
 	scope.vars[name] = node
 }

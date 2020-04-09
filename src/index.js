@@ -16,6 +16,7 @@ import Extern from "./Extern.js"
 import IndexFile from "./IndexFile.js"
 import Server from "./Server.js"
 import Utils from "./Utils.js"
+import ReplicaError from "./ReplicaError.js"
 
 const __filename = url.fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -137,7 +138,14 @@ const update = () => {
 		for(let fullPath in modulesChanged) {
 			const module = modulesChanged[fullPath]
 			ModuleService.updateModule(module)
-			StaticAnalyser.run(module)
+
+			try {
+				StaticAnalyser.run(module)
+			}
+			catch(error) {
+				printError(error)
+			}
+			
 			LoggerService.logYellow("Update", module.path)
 		}
 
@@ -276,14 +284,14 @@ catch(error) {
 	console.log(error)
 }
 
-process.on("unhandledRejection", error => {
-	if(typeof error === "object") {
-		LoggerService.logError(error.type, error.message)
+const printError = (error) => {
+	if(error instanceof ReplicaError) {
+		error.printError()
 	}
 	else {
 		console.error(error)
 	}
-})
-process.on("uncaughtException", error => {
-	console.log(error)
-})
+}
+
+process.on("unhandledRejection", printError)
+process.on("uncaughtException", printError)

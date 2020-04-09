@@ -2,6 +2,7 @@ import fs from "fs"
 import path from "path"
 import acorn from "acorn"
 import Module from "../Module.js"
+import ReplicaError from "../ReplicaError.js"
 import LoggerService from "./LoggerService.js"
 
 const acornConfig = {
@@ -82,10 +83,7 @@ const loadModule = (importPath, parentModule = null) => {
 	}
 
 	if(!fs.existsSync(fullPath)) {
-		throw {
-			type: "ModuleNotFound",
-			message: fullPath
-		}
+		throw ReplicaError.moduleNotFound(fullPath)
 	}
 
 	const baseName = path.basename(fullPath)
