@@ -257,22 +257,6 @@ const printVersion = () => {
 }
 
 try {
-    // process.argv = [ '',
-    //     '',
-    //     '../meta3d/src/index.js',
-    //     '-i', '../meta3d/_index.html', '../meta3d/index.html', 
-    //     "-s", "8060", "8061",
-    //     "-t"
-	// ]    
-    process.argv = [ '',
-        '',
-        '../../games/powerseeker/client/src/index.js',
-        '-i', '../../games/powerseeker/client/_index.html', '../../../games/powerseeker/client/index.html', 
-        "-m", "../../libs/wabi",
-        "-s", "8060", "8061",
-        "-t"
-    ]    	
-
 	CliService.setName(packageData.name)
 		.setVersion(packageData.version)
 		.setDescription(packageData.description)
