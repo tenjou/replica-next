@@ -471,6 +471,9 @@ const parseExportAllDeclaration = (node) => {
 }
 
 const parseImportDeclaration = (node) => {
+	if(!node.module) {
+		return ""
+	}
 	if(node.module && !node.module.output) {
 		parseModule(node.module)
 	}
