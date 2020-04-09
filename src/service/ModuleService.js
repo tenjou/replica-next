@@ -82,8 +82,10 @@ const loadModule = (importPath, parentModule = null) => {
 	}
 
 	if(!fs.existsSync(fullPath)) {
-		LoggerService.logError("ModuleNotFound", fullPath)
-		return null
+		throw {
+			type: "ModuleNotFound",
+			message: fullPath
+		}
 	}
 
 	const baseName = path.basename(fullPath)
@@ -123,6 +125,7 @@ const updateModule = (module) => {
 			catch(error) {
 				LoggerService.logError("Error", error)
 				module.data = null
+				throw ""
 			}
 			module.output = null
 		} break
