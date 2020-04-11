@@ -121,9 +121,9 @@ const parseBreakStatement = (node) => {
 }
 
 const parseForStatement = (node) => {
-	const init = parse[node.init.type](node.init)
-	const test = parse[node.test.type](node.test)
-	const update = parse[node.update.type](node.update)
+	const init = node.init ? parse[node.init.type](node.init) : ""
+	const test = node.test ? parse[node.test.type](node.test) : ""
+	const update = node.update ? parse[node.update.type](node.update) : ""
 	const body = parse[node.body.type](node.body)
 	const output = `for(${init}; ${test}; ${update}) ${body}`
 	return output
