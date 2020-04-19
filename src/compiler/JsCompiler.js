@@ -603,6 +603,7 @@ const escapeNewline = (str) => {
 		switch (character) {
 			case '"':
 			case "'":
+			case "`":
 			case "\\":
 				return "\\" + character
 			case "\n":
