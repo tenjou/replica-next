@@ -241,7 +241,7 @@ const parseTemplateLiteral = (node) => {
 		return ""
 	}
 
-	let output = `"${quasis[0].value.cooked}"`
+	let output = `"${escapeNewline(quasis[0].value.cooked)}"`
 	for(let n = 1; n < quasis.length; n++) {
 		const quasisNode = quasis[n]
 		const expressionNode = node.expressions[n - 1]
