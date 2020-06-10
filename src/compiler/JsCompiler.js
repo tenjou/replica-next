@@ -518,6 +518,12 @@ const parseCatchClause = (node) => {
 	return output
 }
 
+const parseThrowStatement = (node) => {
+	const arg = parse[node.argument.type](node.argument)
+	const output = `throw ${arg}`
+	return output
+}
+
 const parseMethodDefinition = (node) => {
 	const insideClsPrev = isInsideCls
 	isInsideCls = true
@@ -634,6 +640,7 @@ const parse = {
 	SwitchStatement: parseSwitchStatement,
 	LabeledStatement: parseLabeledStatement,
 	TryStatement: parseTryStatement,
+	ThrowStatement: parseThrowStatement,
 	ArrayExpression: parseArrayExpression,
 	Identifier: parseIdentifier,
 	Literal: parseLiteral,
