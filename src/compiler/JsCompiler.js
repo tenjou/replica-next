@@ -308,9 +308,8 @@ const parseCallExpression = (node) => {
 	const callee = parse[node.callee.type](node.callee)
 	switch(node.callee.type) {
 		case "FunctionExpression":
-			return `;(${callee}${params})`
 		case "ArrowFunctionExpression":
-			return `;(${callee})${params}`
+			return `(${callee})${params}`
 	}
 	return `${callee}${params}`
 }
@@ -545,7 +544,14 @@ const parseMethodDefinition = (node) => {
 
 	const key = parse[node.key.type](node.key)
 	const value = parse[node.value.type](node.value)
-	const output = `${key}${value}`
+
+	let output = null
+	if(node.kind === "method" || node.kind === "constructor") {
+		output = `${key}${value}`
+	}
+	else {
+		output = `${node.kind} ${key}${value}`
+	}
 
 	isInsideCls = insideClsPrev
 
