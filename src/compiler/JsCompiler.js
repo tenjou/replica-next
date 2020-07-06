@@ -216,12 +216,14 @@ const parseArrayExpression = (node) => {
 }
 
 const parseVariableDeclaration = (node) => {
-	let output = `${node.kind} `
 	const decls = node.declarations
-	for(let n = 0; n < decls.length; n++) {
-		const nodeOutput = parseVariableDeclarator(decls[n])
+
+	let nodeOutput = parseVariableDeclarator(decls[0])
+	let output = `${node.kind} ${nodeOutput}`
+	for(let n = 1; n < decls.length; n++) {
+		nodeOutput = parseVariableDeclarator(decls[n])
 		if(nodeOutput) {
-			output += nodeOutput
+			output += `, ${nodeOutput}`
 		}
 	}
 	return output
