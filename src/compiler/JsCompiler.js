@@ -426,7 +426,20 @@ const parseExportNamedDeclaration = (node) => {
 	if(node.declaration) {
 		const declaration = node.declaration
 		const declarationOutput = parse[declaration.type](declaration)
-		const exportOutput = `exports.${declaration.id.name} = ${declaration.id.name}`
+
+		let exportOutput = ""
+		if(declaration.type === "VariableDeclaration") {
+			let entry = declaration.declarations[0]
+			exportOutput += `exports.${entry.id.name} = ${entry.id.name}\n`
+			for(let n = 1; n < declaration.declarations.length; n++) {
+				entry = declaration.declarations[n]
+				exportOutput += `\nexports.${entry.id.name} = ${entry.id.name}\n`
+			}
+		}
+		else {
+			exportOutput = `exports.${declaration.id.name} = ${declaration.id.name}`
+		}
+		
 		const output = `${declarationOutput}\n${exportOutput}`
 		return output
 	}
